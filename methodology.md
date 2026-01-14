@@ -2,6 +2,35 @@
 
 **Version 0.1 | January 2026**
 
+---
+
+## Table of Contents
+
+1. [Purpose](#purpose)  
+2. [What PTAL measures (and what it doesn’t)](#what-ptal-measures-and-what-it-doesnt)  
+3. [Methodology overview](#methodology-overview)  
+   1. [Capacity weighting by vehicle type](#1-capacity-weighting-by-vehicle-type)  
+   2. [Reliability adjustments](#2-reliability-adjustments)  
+   3. [Route dominance decay](#3-route-dominance-decay)  
+   4. [Bidirectional counting](#4-bidirectional-counting)  
+   5. [Mode-specific catchments with distance decay](#5-mode-specific-catchments-with-distance-decay)  
+   6. [PTAL band thresholds](#6-ptal-band-thresholds)  
+4. [Calculation process](#calculation-process)  
+5. [Data sources](#data-sources)  
+6. [Limitations and assumptions](#limitations-and-assumptions)  
+   1. [Known limitations](#known-limitations)  
+   2. [Assumptions requiring validation](#assumptions-requiring-validation)  
+7. [Comparison to other PTAL methodologies](#comparison-to-other-ptal-methodologies)  
+   1. [Departures from Transport for London PTAL](#departures-from-transport-for-london-ptal)  
+   2. [Alignment with Australian practice](#alignment-with-australian-practice)  
+8. [Future development](#future-development)  
+9. [Technical implementation](#technical-implementation)  
+10. [Attribution and contact](#attribution-and-contact)  
+11. [Version history](#version-history)  
+12. [Licence](#licence)  
+
+---
+
 ## Purpose
 
 This tool maps public transport accessibility across inner Brisbane using a modified Public Transport Accessibility Level (PTAL) methodology. It measures how easily residents can access frequent, reliable public transport during peak periods.
