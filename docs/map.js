@@ -2,7 +2,7 @@
 // App metadata
 // ==============================
 const APP_VERSION = "v0.3 – Jan 2026";
-const PTAL_THRESHOLDS_TEXT = "PTAL thresholds: 1 <15 · 2 ≥15 · 3 ≥40 · 4 ≥100";
+const PTAL_THRESHOLDS_TEXT = "PTAL thresholds: 1 <10 · 2 ≥10 · 3 ≥50 · 4 ≥120";
 
 // ==============================
 // Data source (supports .geojson OR .geojson.gz)
