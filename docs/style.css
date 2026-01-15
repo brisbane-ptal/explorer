@@ -56,11 +56,10 @@ header h1 {
 #search-btn:hover {
     background: #158241;
 }
-/* Desktop panel */
+/* Info panel common */
 #info-panel {
-    display: none; /* hidden by default */
     position: absolute;
-    top: 80px; /* adjust as needed */
+    top: 80px;
     right: 10px;
     width: 300px;
     max-height: 70%;
@@ -71,12 +70,12 @@ header h1 {
     z-index: 1000;
 }
 
-/* When active on desktop or mobile */
+/* Show panel */
 #info-panel.show {
     display: block;
 }
 
-/* Slide-up only on mobile */
+/* Mobile slide-up */
 @media (max-width: 768px) {
     #info-panel {
         position: fixed;
