@@ -4,12 +4,144 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brisbane PTAL Explorer - Public Transport Accessibility</title>
-    
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* ==============================
+           Reset & Base Styles
+           ============================== */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color:#333; }
+
+        /* ==============================
+           Header
+           ============================== */
+        header { background:#1a9850; color:white; padding:20px; text-align:center; }
+        header h1 { font-size:2rem; margin-bottom:5px; }
+        header p { font-size:1rem; }
+
+        /* ==============================
+           Address Search
+           ============================== */
+        #address-search {
+            position:absolute;
+            top:150px;
+            left:50%;
+            transform:translateX(-50%);
+            z-index:1000;
+            display:flex;
+            gap:8px;
+            background:white;
+            padding:12px;
+            border-radius:8px;
+            box-shadow:0 2px 10px rgba(0,0,0,0.2);
+        }
+        #address-input { width:350px; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:1rem; }
+        #search-btn { padding:10px 20px; background:#1a9850; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold; }
+        #search-btn:hover { background:#158241; }
+
+        /* ==============================
+           Map
+           ============================== */
+        #map { height: calc(100vh - 140px); width:100%; }
+
+        /* ==============================
+           Info Panel
+           ============================== */
+        #info-panel {
+            position:absolute;
+            top:140px;
+            right:20px;
+            width:350px;
+            max-height:calc(100vh - 180px);
+            background:white;
+            padding:20px;
+            border-radius:8px;
+            box-shadow:0 2px 10px rgba(0,0,0,0.2);
+            z-index:1000;
+            overflow-y:auto;
+            display:block; /* desktop visible by default */
+        }
+        #info-panel.hidden { display:none; }
+        #close-panel {
+            position:absolute;
+            top:10px;
+            right:10px;
+            font-size:2rem;
+            background:none;
+            border:none;
+            cursor:pointer;
+            color:#999;
+        }
+        #close-panel:hover { color:#333; }
+
+        /* Mobile slide-up for info panel */
+        @media (max-width: 768px) {
+            #info-panel {
+                position:fixed;
+                bottom:0;
+                left:0;
+                right:0;
+                width:calc(100% - 40px);
+                max-height:50vh;
+                transform:translateY(100%);
+                transition: transform 0.3s ease-in-out;
+            }
+            #info-panel.show { transform:translateY(0); }
+
+            #close-panel { top:8px; right:12px; font-size:1.5rem; }
+            #address-search { width:calc(100% - 40px); left:20px; transform:none; }
+            #address-input { width:100%; }
+        }
+
+        /* ==============================
+           PTAL Legend
+           ============================== */
+        #legend {
+            position:absolute;
+            top:220px;
+            right:20px;
+            width:200px;
+            background:white;
+            padding:15px;
+            border-radius:8px;
+            box-shadow:0 2px 10px rgba(0,0,0,0.2);
+            z-index:1000;
+        }
+        #legend label { font-size:0.9rem; }
+        .legend-color { display:inline-block; width:30px; height:20px; margin-right:10px; border:1px solid #ccc; }
+        .ptal-4 { background:#1a9850; }
+        .ptal-3 { background:#a6d96a; }
+        .ptal-2 { background:#fee08b; }
+        .ptal-1 { background:#d73027; }
+
+        /* Mobile collapsible legend */
+        @media (max-width: 768px) {
+            #legend { position:fixed; bottom:70px; right:10px; width:50px; max-height:70%; overflow:hidden; transition:width 0.3s ease; }
+            #legend.expanded { width:220px; padding:10px; }
+            #legend-toggle { display:block; text-align:center; cursor:pointer; font-weight:bold; padding:5px 0; background:#eee; border-bottom:1px solid #ccc; }
+            #legend .legend-content { display:none; }
+            #legend.expanded .legend-content { display:block; }
+        }
+        @media (min-width: 769px) { #legend-toggle { display:none; } }
+
+        /* ==============================
+           Misc / Tables / Warnings
+           ============================== */
+        .mismatch-warning { background:#fff3cd; border:1px solid #ffc107; padding:15px; border-radius:5px; margin-top:15px; }
+        table { width:100%; margin:15px 0; border-collapse:collapse; }
+        table th, table td { padding:8px; text-align:left; border-bottom:1px solid #ddd; }
+        .savings { background:#d4edda; border:1px solid #c3e6cb; padding:15px; border-radius:5px; margin-top:15px; }
+
+        /* ==============================
+           Footer
+           ============================== */
+        footer { background:#f5f5f5; padding:15px; text-align:center; font-size:0.9rem; }
+        footer a { color:#1a9850; text-decoration:none; }
+        footer a:hover { text-decoration:underline; }
+    </style>
 </head>
 <body>
     <header>
@@ -23,75 +155,55 @@
         <button id="search-btn">Search</button>
     </div>
 
+    <!-- Map -->
     <div id="map"></div>
-    
+
+    <!-- Legend -->
     <div id="legend">
-    <div id="legend-toggle">Legend ⬇</div>
-    <div class="legend-content">
-        <h3>PTAL Score</h3>
-        <div><span class="legend-color ptal-4"></span> 4 - Excellent</div>
-        <div><span class="legend-color ptal-3"></span> 3 - Good</div>
-        <div><span class="legend-color ptal-2"></span> 2 - Moderate</div>
-        <div><span class="legend-color ptal-1"></span> 1 - Poor</div>
-
-        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="mismatch-toggle" style="margin-right: 8px;">
-                <span>Show mismatches only</span>
-            </label>
-            <p style="margin-top: 5px; font-size: 0.85rem; color: #666;">
-                Transit-rich areas restricted to low-rise
-            </p>
+        <div id="legend-toggle">Legend ⬇</div>
+        <div class="legend-content">
+            <h3>PTAL Score</h3>
+            <div><span class="legend-color ptal-4"></span> 4 - Excellent</div>
+            <div><span class="legend-color ptal-3"></span> 3 - Good</div>
+            <div><span class="legend-color ptal-2"></span> 2 - Moderate</div>
+            <div><span class="legend-color ptal-1"></span> 1 - Poor</div>
+            <div style="margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
+                <label style="display:flex; align-items:center; cursor:pointer;">
+                    <input type="checkbox" id="mismatch-toggle" style="margin-right:8px;">
+                    <span>Show mismatches only</span>
+                </label>
+                <p style="margin-top:5px; font-size:0.85rem; color:#666;">Transit-rich areas restricted to low-rise</p>
+            </div>
+            <p style="margin-top:10px; font-size:0.85rem; color:#666;">💡 Click cells for details</p>
         </div>
-
-        <p style="margin-top: 10px; font-size: 0.85rem; color: #666;">💡 Click cells for details</p>
     </div>
-</div>
 
-   <div id="info-panel" class="hidden">
-    <button id="close-panel">&times;</button>
-    <h2>PTAL Score: <span id="ptal-score"></span></h2>
-    <p class="category-label" id="category-label"></p>
-    
-    <!-- NEW: Show effective capacity -->
-    <div id="capacity-info" style="background: #e3f2fd; padding: 10px; border-radius: 5px; margin: 10px 0;">
-        <strong>Effective Capacity:</strong> <span id="total-capacity"></span>
-        <p style="font-size: 0.85em; color: #666; margin-top: 5px;">
-            Accounts for vehicle capacity, reliability, and route overlap
-        </p>
+    <!-- Info Panel -->
+    <div id="info-panel">
+        <button id="close-panel">&times;</button>
+        <h2>PTAL Score: <span id="ptal-score"></span></h2>
+        <p class="category-label" id="category-label"></p>
+        <div id="capacity-info" style="background:#e3f2fd; padding:10px; border-radius:5px; margin:10px 0;">
+            <strong>Effective Capacity:</strong> <span id="total-capacity"></span>
+            <p style="font-size:0.85em; color:#666; margin-top:5px;">Accounts for vehicle capacity, reliability, and route overlap</p>
+        </div>
+        <h3>Planning Controls</h3>
+        <table>
+            <tr><td>Zone</td><td id="zone-code"></td></tr>
+            <tr><td>Current Maximum Height</td><td id="max-height"></td></tr>
+            <tr style="background:#e8f5e9;"><td><strong>Recommended Height</strong></td><td><strong id="recommended-height"></strong></td></tr>
+        </table>
+        <div id="mismatch-warning" class="mismatch-warning" style="display:none;">
+            <p>⚠️ <strong>Planning Mismatch:</strong> This location has excellent transit access but is restricted to low-rise development only.</p>
+        </div>
+        <h3>Nearest Transport</h3>
+        <ul id="nearby-stops"></ul>
     </div>
-    
-    <h3>Planning Controls</h3>
-    <table>
-        <tr>
-            <td>Zone</td>
-            <td id="zone-code"></td>
-        </tr>
-        <tr>
-            <td>Current Maximum Height</td>
-            <td id="max-height"></td>
-        </tr>
-        <tr style="background: #e8f5e9;">
-            <td><strong>Recommended Height</strong></td>
-            <td><strong id="recommended-height"></strong></td>
-        </tr>
-    </table>
-    
-    <div id="mismatch-warning" class="mismatch-warning" style="display: none;">
-        <p>⚠️ <strong>Planning Mismatch:</strong> This location has excellent transit access but is restricted to low-rise development only.</p>
-    </div>
-    
-    <h3>Nearest Transport</h3>
-    <ul id="nearby-stops"></ul>
-</div>
 
+    <!-- Footer -->
     <footer>
-        <p>Built by <a href="https://github.com/brisbane-ptal" target="_blank">PTAL Brisbane</a> | 
-           Data: Brisbane City Council, TransLink</p>
-        <div class="meta">
-        <span id="version"></span> · 
-        <span id="ptal-thresholds"></span>
-</div>
+        <p>Built by <a href="https://github.com/brisbane-ptal" target="_blank">PTAL Brisbane</a> | Data: Brisbane City Council, TransLink</p>
+        <div class="meta"><span id="version"></span> · <span id="ptal-thresholds"></span></div>
     </footer>
 
     <!-- Leaflet JS -->
@@ -99,7 +211,7 @@
 
     <!-- Pako JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-    
+
     <!-- Custom JS -->
     <script src="map.js" defer></script>
 </body>
