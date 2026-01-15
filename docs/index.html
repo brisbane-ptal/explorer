@@ -48,39 +48,30 @@
 
     <div class="legend-divider"></div>
 
-    <!-- Mismatch Filter -->
+    <!-- Single Mismatch Filter -->
     <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:8px;">
       <input type="checkbox" id="mismatch-toggle" />
-      <span style="font-size:14px;">Show planning mismatches only</span>
+      <span style="font-size:14px;">Show mismatches only</span>
     </label>
-    <p class="legend-muted" style="margin:0 0 12px 26px;">Transit-rich areas restricted to low-rise</p>
-
-    <!-- Inverse Mismatch Filter -->
-    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:8px;">
-      <input type="checkbox" id="inverse-mismatch-toggle" />
-      <span style="font-size:14px;">Show overdevelopment only</span>
-    </label>
-    <p class="legend-muted" style="margin:0 0 16px 26px;">High zoning despite poor transit</p>
 
     <!-- Mismatch Legend -->
+    <div style="margin-left:26px; margin-bottom:16px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:18px; height:18px; border:2px solid #ff0000; background:rgba(255,255,255,0.3);"></div>
+        <span style="font-size:12px; color:#666;">Excellent transit but height limits prevent density</span>
+      </div>
+      
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:18px; height:18px; border:2px solid #9932CC; background:rgba(255,255,255,0.3);"></div>
+        <span style="font-size:12px; color:#666;">Poor transit does not serve allowed density</span>
+      </div>
+    </div>
+
+    <!-- Disclaimers -->
     <div class="legend-divider"></div>
-    <h4 style="margin:12px 0 8px 0; font-size:13px; font-weight:600;">Mismatches</h4>
-    
-    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-      <div style="width:20px; height:20px; border:3px solid #ff0000; background:rgba(255,255,255,0.3);"></div>
-      <span style="font-size:13px;">Planning mismatch</span>
+    <div class="legend-disclaimer">
+      <p><strong>Note:</strong> Height controls are approximate. Grid cells may span multiple zones – displayed zone represents dominant zoning. Local area overlays, character codes, and site-specific provisions may apply.</p>
     </div>
-    <p class="legend-muted" style="margin:0 0 12px 28px;">
-      Transit-rich but low-rise only
-    </p>
-    
-    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-      <div style="width:20px; height:20px; border:3px solid #9932CC; background:rgba(255,255,255,0.3);"></div>
-      <span style="font-size:13px;">Overdevelopment</span>
-    </div>
-    <p class="legend-muted" style="margin:0 0 0 28px;">
-      High-rise allowed despite poor transit
-    </p>
   </div>
 
   <!-- Info Panel -->
@@ -109,12 +100,13 @@
     </table>
 
     <!-- Planning Mismatch Warning -->
-    <div id="mismatch-warning" class="mismatch-warning" style="display:none;">
-      <p>⚠️ <strong>Planning Mismatch:</strong> This location has excellent transit access but is restricted to low-rise development only.</p>
+    <div id="planning-mismatch-warning" class="mismatch-warning" style="display:none;">
+      <p>⚠️ <strong>Planning Mismatch:</strong> Excellent transit but height limits prevent density</p>
     </div>
 
-    <!-- Inverse Mismatch Warning -->
-    <div id="inverse-mismatch-warning" class="mismatch-warning" style="display:none; background:#f3e5f5; border-left:4px solid #9932CC;">
+    <!-- Transit Gap Warning -->
+    <div id="transit-gap-warning" class="mismatch-warning" style="display:none; background:#f3e5f5; border-left:4px solid #9932CC;">
+      <p>⚠️ <strong>Transit Gap:</strong> Poor transit does not serve allowed density</p>
     </div>
 
     <h3>Nearest Transport</h3>
