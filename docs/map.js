@@ -200,7 +200,7 @@ function onEachFeature(feature, layer) {
 // ==============================
 // Load data
 // ==============================
-fetch(PTAL_DATA_URL)
+fetch(https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson)
     .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
