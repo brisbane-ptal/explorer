@@ -41,6 +41,13 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 18,
 }).addTo(map);
 
+// Add scale bar
+L.control.scale({
+  position: 'bottomleft',
+  imperial: false,
+  metric: true
+}).addTo(map);
+
 /* ==============================
    PTAL Helpers
    ============================== */
@@ -352,11 +359,14 @@ async function loadPTAL() {
 }
 
 /* ==============================
-   Legend (mobile burger)
+   Legend controls
    ============================== */
 const legend = $("legend");
 const burger = $("legend-burger");
+const legendToggle = $("legend-toggle");
+const legendContent = $("legend-content");
 
+// Mobile burger menu
 if (burger && legend) {
   burger.addEventListener("click", (e) => {
     e.preventDefault();
@@ -367,6 +377,40 @@ if (burger && legend) {
   // close legend when tapping map (mobile)
   map.on("click", () => {
     if (window.innerWidth <= 768) legend.classList.remove("open");
+  });
+}
+
+// Desktop legend collapse toggle
+if (legendToggle && legendContent && legend) {
+  // Show toggle button on desktop only
+  if (window.innerWidth > 768) {
+    legendToggle.style.display = "block";
+  }
+
+  legendToggle.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (legendContent.style.display === "none") {
+      legendContent.style.display = "block";
+      legendToggle.textContent = "−";
+      legend.classList.remove("collapsed");
+    } else {
+      legendContent.style.display = "none";
+      legendToggle.textContent = "+";
+      legend.classList.add("collapsed");
+    }
+  });
+
+  // Show/hide toggle on resize
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) {
+      legendToggle.style.display = "block";
+    } else {
+      legendToggle.style.display = "none";
+      legendContent.style.display = "block";
+      legend.classList.remove("collapsed");
+    }
   });
 }
 
