@@ -26,12 +26,14 @@
     <div id="map"></div>
     
     <div id="legend">
+    <div id="legend-toggle">Legend ⬇</div>
+    <div class="legend-content">
         <h3>PTAL Score</h3>
         <div><span class="legend-color ptal-4"></span> 4 - Excellent</div>
         <div><span class="legend-color ptal-3"></span> 3 - Good</div>
         <div><span class="legend-color ptal-2"></span> 2 - Moderate</div>
         <div><span class="legend-color ptal-1"></span> 1 - Poor</div>
-        
+
         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
             <label style="display: flex; align-items: center; cursor: pointer;">
                 <input type="checkbox" id="mismatch-toggle" style="margin-right: 8px;">
@@ -41,9 +43,10 @@
                 Transit-rich areas restricted to low-rise
             </p>
         </div>
-        
-        <p style="margin-top: 10px; font-size: 0.85rem; color: #666;">💡 Hover and click cells for details</p>
+
+        <p style="margin-top: 10px; font-size: 0.85rem; color: #666;">💡 Click cells for details</p>
     </div>
+</div>
 
    <div id="info-panel" class="hidden">
     <button id="close-panel">&times;</button>
