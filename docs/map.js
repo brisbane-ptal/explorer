@@ -26,7 +26,7 @@ function onEachFeature(feature, layer) {
 // Load PTAL data with gz-first fallback
 async function loadPTAL() {
     try {
-        // 1️⃣ Try gzipped first
+        // Try gzipped file first
         const resGz = await fetch(PTAL_GZ_URL);
         if (!resGz.ok) throw new Error(`HTTP ${resGz.status} (gz)`);
 
@@ -38,6 +38,7 @@ async function loadPTAL() {
         addPTALLayer(dataGz);
 
     } catch (gzErr) {
+        // gz failed, fallback to plain GeoJSON
         console.warn("Failed to load gz, falling back to plain GeoJSON:", gzErr);
 
         try {
@@ -49,8 +50,8 @@ async function loadPTAL() {
             addPTALLayer(dataJson);
 
         } catch (jsonErr) {
-            console.error("Failed to load PTAL data:", jsonErr);
-            alert("Failed to load PTAL data. Please try again later.");
+            // Only log errors, no alert
+            console.error("Failed to load PTAL data entirely:", jsonErr);
         }
     }
 }
