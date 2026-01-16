@@ -1,12 +1,13 @@
 /* =========================================================
-   Brisbane PTAL Explorer — map.js (updated v0.5)
+   Brisbane PTAL Explorer — map.js (v0.7)
    ========================================================= */
 
 /* ==============================
    App metadata
    ============================== */
-const APP_VERSION = "v0.5 – Jan 2026";
-const PTAL_THRESHOLDS_TEXT = "PTAL thresholds: 1 <10 · 2 ≥10 · 3 ≥50 · 4 ≥120";
+const APP_VERSION = "v0.7 – Jan 2026";
+const PTAL_THRESHOLDS_TEXT =
+  "PTAL thresholds (Brisbane calibrated): 1 <5 · 2 ≥5 · 3 ≥25 · 4 ≥60";
 
 /* ==============================
    PTAL URLs
@@ -15,12 +16,13 @@ const PTAL_GZ_URL =
   "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz";
 const PTAL_JSON_URL =
   "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson";
+const STOPS_LOOKUP_URL =
+  "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/stops_lookup.json";
 
 /* ==============================
    Nominatim config
    ============================== */
-// Recommended: set to an email you control (Nominatim usage policy).
-const NOMINATIM_EMAIL = ""; // e.g. "you@example.com"
+const NOMINATIM_EMAIL = "";
 
 /* ==============================
    Globals
@@ -28,7 +30,7 @@ const NOMINATIM_EMAIL = ""; // e.g. "you@example.com"
 let ptalLayer = null;
 let ptalData = null;
 let showMismatchesOnly = false;
-
+let stopsLookup = null; // Stop lookup for optimized display
 let searchMarker = null;
 
 /* ==============================
@@ -42,22 +44,49 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 // Add scale bar
-L.control.scale({
-  position: 'bottomleft',
-  imperial: false,
-  metric: true
-}).addTo(map);
+L.control
+  .scale({
+    position: "bottomleft",
+    imperial: false,
+    metric: true,
+  })
+  .addTo(map);
 
 /* ==============================
    PTAL Helpers
    ============================== */
+
+/**
+ * Brisbane-calibrated PTAL thresholds (based on effective units/hr)
+ * PTAL 4: >= 60
+ * PTAL 3: >= 25
+ * PTAL 2: >= 5
+ * PTAL 1: <  5
+ *
+ * We compute PTAL from total_capacity so we can re-band without rerunning Python.
+ */
+function classifyPTAL(totalCapacity) {
+  const c = Number(totalCapacity);
+  if (!Number.isFinite(c)) return 1;
+
+  if (c >= 60) return 4;
+  if (c >= 25) return 3;
+  if (c >= 5) return 2;
+  return 1;
+}
+
 function getPTALColor(ptal) {
   switch (ptal) {
-    case 4: return "#1a9850";
-    case 3: return "#a6d96a";
-    case 2: return "#fee08b";
-    case 1: return "#d73027";
-    default: return "#cccccc";
+    case 4:
+      return "#1a9850";
+    case 3:
+      return "#a6d96a";
+    case 2:
+      return "#fee08b";
+    case 1:
+      return "#d73027";
+    default:
+      return "#cccccc";
   }
 }
 
@@ -68,11 +97,16 @@ function getPTALLabel(ptal) {
 
 function getRecommendedHeight(ptal) {
   switch (ptal) {
-    case 4: return "15+ storeys";
-    case 3: return "8–15 storeys";
-    case 2: return "3–8 storeys";
-    case 1: return "2–3 storeys";
-    default: return "N/A";
+    case 4:
+      return "15+ storeys";
+    case 3:
+      return "8–15 storeys";
+    case 2:
+      return "3–8 storeys";
+    case 1:
+      return "2–3 storeys";
+    default:
+      return "N/A";
   }
 }
 
@@ -94,58 +128,61 @@ function getModeLabel(mode) {
    Mismatch Detection
    ============================== */
 function hasPlanningMismatch(props) {
-  const ptal = Number(props.ptal);
+  const ptal = classifyPTAL(props.total_capacity);
   const maxStoreys = Number(props.max_storeys);
   const zone = props.Zone_code;
-  
-  // Don't flag mismatch if zone is unknown or mixed
+
   if (!zone || zone === "Unknown" || zone === "Mixed") return false;
-  
-  // PTAL 4 but restricted to 3 storeys or less
-  return Number.isFinite(ptal) && Number.isFinite(maxStoreys) && ptal === 4 && maxStoreys <= 3;
+
+  return Number.isFinite(maxStoreys) && ptal === 4 && maxStoreys <= 3;
 }
 
 function hasTransitGap(props) {
-  const ptal = Number(props.ptal);
+  const ptal = classifyPTAL(props.total_capacity);
   const maxStoreys = Number(props.max_storeys);
   const zone = props.Zone_code;
-  
-  // Don't flag if zone is unknown or mixed
+
   if (!zone || zone === "Unknown" || zone === "Mixed") return false;
-  
-  // Poor transit (PTAL 1) but allows 4+ storeys
-  return Number.isFinite(ptal) && Number.isFinite(maxStoreys) && ptal <= 1 && maxStoreys >= 4;
+
+  return Number.isFinite(maxStoreys) && ptal <= 1 && maxStoreys >= 4;
 }
 
 /* ==============================
    Safe DOM helpers
    ============================== */
-function $(id) { return document.getElementById(id); }
-function setText(id, text) { const el = $(id); if (el) el.textContent = text ?? ""; }
-function setHTML(id, html) { const el = $(id); if (el) el.innerHTML = html ?? ""; }
-function showEl(id, show) { const el = $(id); if (el) el.style.display = show ? "block" : "none"; }
+function $(id) {
+  return document.getElementById(id);
+}
+function setText(id, text) {
+  const el = $(id);
+  if (el) el.textContent = text ?? "";
+}
+function setHTML(id, html) {
+  const el = $(id);
+  if (el) el.innerHTML = html ?? "";
+}
+function showEl(id, show) {
+  const el = $(id);
+  if (el) el.style.display = show ? "block" : "none";
+}
 
 /* ==============================
    Styling & Interaction
    ============================== */
 function style(feature) {
   const props = feature.properties || {};
-  const ptal = Number(props.ptal);
+  const ptal = classifyPTAL(props.total_capacity);
 
-  if (!Number.isFinite(ptal)) return { fillOpacity: 0, opacity: 0, stroke: false };
-  
   const planningMismatch = hasPlanningMismatch(props);
   const transitGap = hasTransitGap(props);
 
-  // Filter logic - show if either mismatch type when filter active
   if (showMismatchesOnly && !planningMismatch && !transitGap) {
     return { fillOpacity: 0, opacity: 0, stroke: false };
   }
 
-  // Border color based on mismatch type
   let borderColor = "white";
   let borderWeight = 1;
-  
+
   if (planningMismatch) {
     borderColor = "#ff0000";
     borderWeight = 2;
@@ -166,15 +203,17 @@ function style(feature) {
 function highlightFeature(e) {
   const layer = e.target;
   const props = layer.feature?.properties || {};
-  
+
   const planningMismatch = hasPlanningMismatch(props);
   const transitGap = hasTransitGap(props);
-  
+
   if (showMismatchesOnly && !planningMismatch && !transitGap) return;
 
   layer.setStyle({ weight: 3, opacity: 1, fillOpacity: 0.8 });
   if (!L.Browser.ie && !L.Browser.opera) {
-    try { layer.bringToFront(); } catch (_) {}
+    try {
+      layer.bringToFront();
+    } catch (_) {}
   }
 }
 
@@ -189,13 +228,13 @@ function onEachFeature(feature, layer) {
     click: showInfo,
   });
 
-  const ptal = Number(feature.properties?.ptal);
-  if (Number.isFinite(ptal)) {
-    layer.bindTooltip(
-      `PTAL ${ptal} (${getPTALLabel(ptal)})<br>Click for details`,
-      { sticky: true, opacity: 0.9 }
-    );
-  }
+  const props = feature.properties || {};
+  const ptal = classifyPTAL(props.total_capacity);
+
+  layer.bindTooltip(`PTAL ${ptal} (${getPTALLabel(ptal)})<br>Click for details`, {
+    sticky: true,
+    opacity: 0.9,
+  });
 }
 
 /* ==============================
@@ -207,13 +246,13 @@ const closeBtn = $("close-panel");
 function openInfoPanel() {
   if (!infoPanel) return;
   infoPanel.classList.remove("hidden");
-  infoPanel.classList.add("show"); // mobile slide-up
+  infoPanel.classList.add("show");
 }
 
 function closeInfoPanel() {
   if (!infoPanel) return;
-  infoPanel.classList.remove("show");   // mobile slide down
-  infoPanel.classList.add("hidden");    // desktop hide
+  infoPanel.classList.remove("show");
+  infoPanel.classList.add("hidden");
 }
 
 if (closeBtn) {
@@ -226,8 +265,7 @@ if (closeBtn) {
 
 function showInfo(e) {
   const props = e.target?.feature?.properties || {};
-  const ptal = Number(props.ptal);
-  if (!Number.isFinite(ptal)) return;
+  const ptal = classifyPTAL(props.total_capacity);
 
   setText("ptal-score", ptal);
   setText("category-label", getPTALLabel(ptal));
@@ -239,64 +277,83 @@ function showInfo(e) {
     Number.isFinite(maxStoreys) && maxStoreys >= 90
       ? "Unlimited*<br><small style='color:#666;'>*Airport height limits apply</small>"
       : Number.isFinite(maxStoreys)
-        ? `${maxStoreys} storeys`
-        : "Unknown";
+      ? `${maxStoreys} storeys`
+      : "Unknown";
   setHTML("max-height", heightDisplay);
 
-  // Show mismatch warnings
   const planningMismatch = hasPlanningMismatch(props);
   const transitGap = hasTransitGap(props);
-  
+
   showEl("planning-mismatch-warning", planningMismatch);
   showEl("transit-gap-warning", transitGap);
 
-  if (props.total_capacity !== undefined && props.total_capacity !== null && props.total_capacity !== "") {
+  // Capacity breakdown
+  const totalCapacity = props.total_capacity;
+  const capacityRail = Number(props.capacity_rail) || 0;
+  const capacityFerry = Number(props.capacity_ferry) || 0;
+  const capacityBusway = Number(props.capacity_busway) || 0;
+  const capacityBus = Number(props.capacity_bus) || 0;
+
+  if (totalCapacity !== undefined && totalCapacity !== null && totalCapacity !== "") {
     showEl("capacity-info", true);
-    setText("total-capacity", `${props.total_capacity} effective units/hr`);
+    setText("total-capacity", `${totalCapacity} effective units/hr`);
+
+    // Show breakdown
+    let breakdownHTML = "<div style='margin-top:8px; font-size:0.9em;'>";
+    if (capacityRail > 0) breakdownHTML += `<div>🚆 Rail: ${capacityRail} units/hr</div>`;
+    if (capacityFerry > 0) breakdownHTML += `<div>⛴️ Ferry: ${capacityFerry} units/hr</div>`;
+    if (capacityBusway > 0) breakdownHTML += `<div>🚌 Busway: ${capacityBusway} units/hr</div>`;
+    if (capacityBus > 0) breakdownHTML += `<div>🚌 Bus: ${capacityBus} units/hr</div>`;
+    breakdownHTML += "</div>";
+
+    setHTML("capacity-breakdown", breakdownHTML);
+    showEl("capacity-breakdown", true);
   } else {
     showEl("capacity-info", false);
   }
 
-  // Stops list with stop codes
+  // Stops list using lookup
   const stopsList = $("nearby-stops");
   if (stopsList) {
     stopsList.innerHTML = "";
-    try {
-      const stops =
-        typeof props.nearby_stops === "string"
-          ? JSON.parse(props.nearby_stops)
-          : (props.nearby_stops || []);
 
-      if (!Array.isArray(stops) || stops.length === 0) {
-        stopsList.innerHTML = "<li style='color:#999;'>No stops within catchment</li>";
-      } else {
-        stops.slice(0, 10).forEach((stop) => {
-          const li = document.createElement("li");
-          const mode = stop.mode || "bus";
-          const name = stop.stop_name || "Stop";
-          const stopCode = stop.stop_id ? ` (${stop.stop_id})` : '';
-          const dist = stop.distance_m ?? "?";
-          const walk = stop.walk_time_min ?? "?";
-          const modeLabel = getModeLabel(mode);
+    const stopIds = props.nearby_stop_ids ? String(props.nearby_stop_ids).split(",") : [];
 
-          li.innerHTML = `
-            ${getModeIcon(mode)} <strong>${name}</strong>${stopCode}<br>
-            <span style="color:#666;font-size:0.9em;">
-              ${modeLabel} • ${dist} m • ${walk} min walk
-            </span>`;
-          li.style.marginBottom = "10px";
-          stopsList.appendChild(li);
-        });
-      }
-    } catch (err) {
-      stopsList.innerHTML = "<li style='color:#999;'>Error loading stops</li>";
-      console.warn("nearby_stops parse error:", err);
+    if (stopIds.length === 0 || (stopIds.length === 1 && stopIds[0] === "")) {
+      stopsList.innerHTML = "<li style='color:#999;'>No stops within catchment</li>";
+    } else if (!stopsLookup) {
+      stopsList.innerHTML = "<li style='color:#999;'>Loading stop data...</li>";
+    } else {
+      stopIds.slice(0, 10).forEach((stopId) => {
+        const stop = stopsLookup[stopId.trim()];
+        if (!stop) return;
+
+        const li = document.createElement("li");
+        const mode = stop.mode || "bus";
+        const name = stop.name || "Stop";
+        const routes = stop.routes || [];
+
+        let routesText = "";
+        if (routes.length > 0) {
+          routesText = `<div style="color:#666;font-size:0.85em;margin-top:3px;">Routes: ${routes.join(
+            ", "
+          )}</div>`;
+        }
+
+        li.innerHTML = `
+          ${getModeIcon(mode)} <strong>${name}</strong> (${stopId})<br>
+          <span style="color:#666;font-size:0.9em;">
+            ${getModeLabel(mode)}
+          </span>
+          ${routesText}`;
+        li.style.marginBottom = "12px";
+        stopsList.appendChild(li);
+      });
     }
   }
 
   openInfoPanel();
 
-  // Mobile: close legend drawer after click
   if (window.innerWidth <= 768) {
     const lg = $("legend");
     if (lg) lg.classList.remove("open");
@@ -308,19 +365,40 @@ function showInfo(e) {
    ============================== */
 function addPTALLayer(data) {
   if (ptalLayer) {
-    try { ptalLayer.remove(); } catch (_) {}
+    try {
+      ptalLayer.remove();
+    } catch (_) {}
     ptalLayer = null;
   }
 
   ptalData = data;
-
   ptalLayer = L.geoJSON(data, { style, onEachFeature }).addTo(map);
 
-  try { map.fitBounds(ptalLayer.getBounds()); } catch (_) {}
+  try {
+    map.fitBounds(ptalLayer.getBounds());
+  } catch (_) {}
 }
 
 /* ==============================
-   PTAL Loader (GZ first, fallback to plain)
+   Load Stops Lookup
+   ============================== */
+async function loadStopsLookup() {
+  try {
+    console.log("Loading stops lookup...");
+    const response = await fetch(STOPS_LOOKUP_URL, { cache: "force-cache" });
+    if (response.ok) {
+      stopsLookup = await response.json();
+      console.log(`Loaded lookup for ${Object.keys(stopsLookup).length} stops`);
+    } else {
+      console.warn("Stops lookup not available:", response.status);
+    }
+  } catch (err) {
+    console.warn("Failed to load stops lookup:", err);
+  }
+}
+
+/* ==============================
+   PTAL Loader
    ============================== */
 async function loadPTAL() {
   let data = null;
@@ -366,7 +444,6 @@ const burger = $("legend-burger");
 const legendToggle = $("legend-toggle");
 const legendContent = $("legend-content");
 
-// Mobile burger menu
 if (burger && legend) {
   burger.addEventListener("click", (e) => {
     e.preventDefault();
@@ -374,15 +451,12 @@ if (burger && legend) {
     legend.classList.toggle("open");
   });
 
-  // close legend when tapping map (mobile)
   map.on("click", () => {
     if (window.innerWidth <= 768) legend.classList.remove("open");
   });
 }
 
-// Desktop legend collapse toggle
 if (legendToggle && legendContent && legend) {
-  // Show toggle button on desktop only
   if (window.innerWidth > 768) {
     legendToggle.style.display = "block";
   }
@@ -390,7 +464,7 @@ if (legendToggle && legendContent && legend) {
   legendToggle.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (legendContent.style.display === "none") {
       legendContent.style.display = "block";
       legendToggle.textContent = "−";
@@ -402,7 +476,6 @@ if (legendToggle && legendContent && legend) {
     }
   });
 
-  // Show/hide toggle on resize
   window.addEventListener("resize", () => {
     if (window.innerWidth > 768) {
       legendToggle.style.display = "block";
@@ -415,7 +488,7 @@ if (legendToggle && legendContent && legend) {
 }
 
 /* ==============================
-   Mismatch toggle (single checkbox)
+   Mismatch toggle
    ============================== */
 const mismatchToggle = $("mismatch-toggle");
 
@@ -429,7 +502,7 @@ if (mismatchToggle) {
 }
 
 /* ==============================
-   Address search (Nominatim)
+   Address search
    ============================== */
 const searchBtn = $("search-btn");
 const searchInput = $("address-input");
@@ -454,11 +527,9 @@ async function searchAddress() {
   url.searchParams.set("q", searchQuery);
   url.searchParams.set("limit", "1");
 
-  // Optional but recommended by Nominatim
   if (NOMINATIM_EMAIL) url.searchParams.set("email", NOMINATIM_EMAIL);
 
   try {
-    // Give user feedback
     if (searchBtn) {
       searchBtn.disabled = true;
       searchBtn.textContent = "Searching…";
@@ -466,7 +537,7 @@ async function searchAddress() {
 
     const res = await fetch(url.toString(), {
       headers: {
-        "Accept": "application/json",
+        Accept: "application/json",
       },
     });
 
@@ -481,9 +552,10 @@ async function searchAddress() {
 
       map.setView([lat, lon], 17);
 
-      // clear old marker
       if (searchMarker) {
-        try { map.removeLayer(searchMarker); } catch (_) {}
+        try {
+          map.removeLayer(searchMarker);
+        } catch (_) {}
       }
 
       searchMarker = L.marker([lat, lon]).addTo(map);
@@ -516,4 +588,6 @@ if (infoPanel) {
   infoPanel.classList.remove("show");
 }
 
+// Load both datasets
+loadStopsLookup();
 loadPTAL();
