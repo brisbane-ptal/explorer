@@ -178,6 +178,26 @@ header p{
 .ptal-2{ background:#fee08b; }
 .ptal-1{ background:#d73027; }
 
+/* Week 1 overlay hatching */
+.flood-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 8px,
+    rgba(0, 119, 190, 0.25) 8px,
+    rgba(0, 119, 190, 0.25) 10px
+  ) !important;
+}
+
+.parking-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(255, 165, 0, 0.25) 8px,
+    rgba(255, 165, 0, 0.25) 10px
+  ) !important;
+}
 .legend-divider{
   margin: 12px 0;
   padding-top: 12px;
