@@ -1,11 +1,11 @@
 /* =========================================================
-   Brisbane PTAL Explorer — map.js (updated v0.5)
+   Brisbane PTAL Explorer — map.js (updated v0.6 - Week 1)
    ========================================================= */
 
 /* ==============================
    App metadata
    ============================== */
-const APP_VERSION = "v0.5 – Jan 2026";
+const APP_VERSION = "v0.6 – Jan 2026";
 const PTAL_THRESHOLDS_TEXT = "PTAL thresholds: 1 <10 · 2 ≥10 · 3 ≥50 · 4 ≥120";
 
 /* ==============================
@@ -19,8 +19,7 @@ const PTAL_JSON_URL =
 /* ==============================
    Nominatim config
    ============================== */
-// Recommended: set to an email you control (Nominatim usage policy).
-const NOMINATIM_EMAIL = ""; // e.g. "you@example.com"
+const NOMINATIM_EMAIL = "";
 
 /* ==============================
    Globals
@@ -28,7 +27,6 @@ const NOMINATIM_EMAIL = ""; // e.g. "you@example.com"
 let ptalLayer = null;
 let ptalData = null;
 let showMismatchesOnly = false;
-
 let searchMarker = null;
 
 /* ==============================
@@ -41,7 +39,6 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 18,
 }).addTo(map);
 
-// Add scale bar
 L.control.scale({
   position: 'bottomleft',
   imperial: false,
@@ -91,18 +88,24 @@ function getModeLabel(mode) {
 }
 
 /* ==============================
-   Mismatch Detection
+   Overlay Detection (Week 1)
    ============================== */
 function hasPlanningMismatch(props) {
-  const ptal = Number(props.ptal);
-  const maxStoreys = Number(props.max_storeys);
+  const heightMismatch = props.height_mismatch;
   const zone = props.Zone_code;
   
-  // Don't flag mismatch if zone is unknown or mixed
   if (!zone || zone === "Unknown" || zone === "Mixed") return false;
   
-  // PTAL 4 but restricted to 3 storeys or less
-  return Number.isFinite(ptal) && Number.isFinite(maxStoreys) && ptal === 4 && maxStoreys <= 3;
+  return heightMismatch === "under" || heightMismatch === "over";
+}
+
+function hasFloodConstraint(props) {
+  const flood = props.flood_constraint;
+  return flood === "FPA1" || flood === "FPA2A" || flood === "FPA2B" || flood === "FPA3";
+}
+
+function hasParkingMismatch(props) {
+  return props.parking_mismatch === true;
 }
 
 function hasTransitGap(props) {
@@ -110,10 +113,8 @@ function hasTransitGap(props) {
   const maxStoreys = Number(props.max_storeys);
   const zone = props.Zone_code;
   
-  // Don't flag if zone is unknown or mixed
   if (!zone || zone === "Unknown" || zone === "Mixed") return false;
   
-  // Poor transit (PTAL 1) but allows 4+ storeys
   return Number.isFinite(ptal) && Number.isFinite(maxStoreys) && ptal <= 1 && maxStoreys >= 4;
 }
 
@@ -136,13 +137,13 @@ function style(feature) {
   
   const planningMismatch = hasPlanningMismatch(props);
   const transitGap = hasTransitGap(props);
+  const flood = hasFloodConstraint(props);
+  const parking = hasParkingMismatch(props);
 
-  // Filter logic - show if either mismatch type when filter active
   if (showMismatchesOnly && !planningMismatch && !transitGap) {
     return { fillOpacity: 0, opacity: 0, stroke: false };
   }
 
-  // Border color based on mismatch type
   let borderColor = "white";
   let borderWeight = 1;
   
@@ -154,12 +155,18 @@ function style(feature) {
     borderWeight = 2;
   }
 
+  const className = [
+    flood ? 'flood-hatch' : '',
+    parking ? 'parking-hatch' : ''
+  ].filter(Boolean).join(' ');
+
   return {
     fillColor: getPTALColor(ptal),
     weight: borderWeight,
     color: borderColor,
     opacity: 0.7,
     fillOpacity: 0.6,
+    className: className || undefined
   };
 }
 
@@ -207,13 +214,13 @@ const closeBtn = $("close-panel");
 function openInfoPanel() {
   if (!infoPanel) return;
   infoPanel.classList.remove("hidden");
-  infoPanel.classList.add("show"); // mobile slide-up
+  infoPanel.classList.add("show");
 }
 
 function closeInfoPanel() {
   if (!infoPanel) return;
-  infoPanel.classList.remove("show");   // mobile slide down
-  infoPanel.classList.add("hidden");    // desktop hide
+  infoPanel.classList.remove("show");
+  infoPanel.classList.add("hidden");
 }
 
 if (closeBtn) {
@@ -243,7 +250,6 @@ function showInfo(e) {
         : "Unknown";
   setHTML("max-height", heightDisplay);
 
-  // Show mismatch warnings
   const planningMismatch = hasPlanningMismatch(props);
   const transitGap = hasTransitGap(props);
   
@@ -257,7 +263,6 @@ function showInfo(e) {
     showEl("capacity-info", false);
   }
 
-  // Stops list with stop codes
   const stopsList = $("nearby-stops");
   if (stopsList) {
     stopsList.innerHTML = "";
@@ -296,7 +301,6 @@ function showInfo(e) {
 
   openInfoPanel();
 
-  // Mobile: close legend drawer after click
   if (window.innerWidth <= 768) {
     const lg = $("legend");
     if (lg) lg.classList.remove("open");
@@ -313,19 +317,17 @@ function addPTALLayer(data) {
   }
 
   ptalData = data;
-
   ptalLayer = L.geoJSON(data, { style, onEachFeature }).addTo(map);
 
   try { map.fitBounds(ptalLayer.getBounds()); } catch (_) {}
 }
 
 /* ==============================
-   PTAL Loader (GZ first, fallback to plain)
+   PTAL Loader
    ============================== */
 async function loadPTAL() {
   let data = null;
 
-  // Try gz
   try {
     const resGz = await fetch(PTAL_GZ_URL, { cache: "no-store" });
     if (resGz.ok) {
@@ -340,7 +342,6 @@ async function loadPTAL() {
     console.warn("PTAL gz load failed, falling back to JSON:", err);
   }
 
-  // Fallback json
   if (!data) {
     try {
       const resJson = await fetch(PTAL_JSON_URL, { cache: "no-store" });
@@ -366,7 +367,6 @@ const burger = $("legend-burger");
 const legendToggle = $("legend-toggle");
 const legendContent = $("legend-content");
 
-// Mobile burger menu
 if (burger && legend) {
   burger.addEventListener("click", (e) => {
     e.preventDefault();
@@ -374,15 +374,12 @@ if (burger && legend) {
     legend.classList.toggle("open");
   });
 
-  // close legend when tapping map (mobile)
   map.on("click", () => {
     if (window.innerWidth <= 768) legend.classList.remove("open");
   });
 }
 
-// Desktop legend collapse toggle
 if (legendToggle && legendContent && legend) {
-  // Show toggle button on desktop only
   if (window.innerWidth > 768) {
     legendToggle.style.display = "block";
   }
@@ -402,7 +399,6 @@ if (legendToggle && legendContent && legend) {
     }
   });
 
-  // Show/hide toggle on resize
   window.addEventListener("resize", () => {
     if (window.innerWidth > 768) {
       legendToggle.style.display = "block";
@@ -415,7 +411,7 @@ if (legendToggle && legendContent && legend) {
 }
 
 /* ==============================
-   Mismatch toggle (single checkbox)
+   Mismatch toggle
    ============================== */
 const mismatchToggle = $("mismatch-toggle");
 
@@ -429,7 +425,7 @@ if (mismatchToggle) {
 }
 
 /* ==============================
-   Address search (Nominatim)
+   Address search
    ============================== */
 const searchBtn = $("search-btn");
 const searchInput = $("address-input");
@@ -454,20 +450,16 @@ async function searchAddress() {
   url.searchParams.set("q", searchQuery);
   url.searchParams.set("limit", "1");
 
-  // Optional but recommended by Nominatim
   if (NOMINATIM_EMAIL) url.searchParams.set("email", NOMINATIM_EMAIL);
 
   try {
-    // Give user feedback
     if (searchBtn) {
       searchBtn.disabled = true;
       searchBtn.textContent = "Searching…";
     }
 
     const res = await fetch(url.toString(), {
-      headers: {
-        "Accept": "application/json",
-      },
+      headers: { "Accept": "application/json" },
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -481,7 +473,6 @@ async function searchAddress() {
 
       map.setView([lat, lon], 17);
 
-      // clear old marker
       if (searchMarker) {
         try { map.removeLayer(searchMarker); } catch (_) {}
       }
