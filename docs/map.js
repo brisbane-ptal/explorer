@@ -83,26 +83,27 @@ const PTAL_COLORS = {
   '1': '#d73027'
 };
 
-// Create SVG patterns immediately (no async delay)
+// Create SVG patterns for overlays
 function createSVGPatterns() {
   const mapPane = map.getPanes().overlayPane;
   let svg = mapPane.querySelector('svg');
   
-  // Create SVG if it doesn't exist
+  // If no SVG exists yet, patterns will be created after layer loads
   if (!svg) {
-    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'leaflet-zoom-animated');
-    mapPane.appendChild(svg);
+    console.warn('⚠️  SVG not ready, will retry after layer load');
+    return false;
   }
   
   // Don't recreate if patterns already exist
   if (svg.querySelector('defs')) {
-    return;
+    console.log('✓ SVG patterns already exist');
+    return true;
   }
   
+  console.log('Creating SVG patterns...');
   const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
   
-  // Create 15 patterns: 5 PTAL levels × 3 overlay states (flood, parking, both)
+  // Create 15 patterns: 5 PTAL levels × 3 overlay states
   Object.entries(PTAL_COLORS).forEach(([band, color]) => {
     
     // 1. Flood only (blue diagonal)
@@ -188,17 +189,9 @@ function createSVGPatterns() {
   });
   
   svg.insertBefore(defs, svg.firstChild);
+  console.log('✓ SVG patterns created');
+  return true;
 }
-
-// Call immediately when map is ready
-map.whenReady(createSVGPatterns);
-
-// Also call after layer is added (defensive)
-map.on('layeradd', function(e) {
-  if (e.layer === ptalLayer) {
-    createSVGPatterns();
-  }
-});
 
 function getPTALColor(ptal, peak_services) {
   const band = getPTALBand(ptal, peak_services);
@@ -547,6 +540,9 @@ function addPTALLayer(data) {
 
   ptalData = data;
   ptalLayer = L.geoJSON(data, { style, onEachFeature }).addTo(map);
+
+  // CRITICAL: Create patterns AFTER layer is added
+  createSVGPatterns();
 
   try { map.fitBounds(ptalLayer.getBounds()); } catch (_) {}
 }
