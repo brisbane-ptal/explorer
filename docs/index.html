@@ -40,70 +40,89 @@
 <button id="legend-toggle" type="button" aria-label="Toggle legend" style="display:none; background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">−</button>
 </div>
 <div id="legend-content">
-<div class="legend-row"><span class="legend-color ptal-4"></span> 4 – Excellent</div>
-<div class="legend-row"><span class="legend-color ptal-3"></span> 3 – Good</div>
-<div class="legend-row"><span class="legend-color ptal-2"></span> 2 – Moderate</div>
-<div class="legend-row"><span class="legend-color ptal-1"></span> 1 – Poor</div>
+<div class="legend-row"><span class="legend-square ptal-4b"></span> 4B — Excellent</div>
+<div class="legend-row"><span class="legend-square ptal-4a"></span> 4A — Very Good</div>
+<div class="legend-row"><span class="legend-square ptal-3"></span> 3 — Good</div>
+<div class="legend-row"><span class="legend-square ptal-2"></span> 2 — Moderate</div>
+<div class="legend-row"><span class="legend-square ptal-1"></span> 1 — Poor</div>
 <div class="legend-divider"></div>
-<label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:8px;">
-<input type="checkbox" id="mismatch-toggle" />
-<span style="font-size:14px;">Show mismatches only</span>
+<h4 style="font-size:0.95rem; margin:8px 0 8px 0; color:#555;">Overlays</h4>
+<label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:8px; font-size:14px;">
+  <input type="checkbox" id="mismatch-toggle" />
+  Show planning mismatches
 </label>
-<div style="margin-left:26px; margin-bottom:8px;">
-<div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-<div style="width:18px; height:18px; border:2px solid #ff0000; background:rgba(255,255,255,0.3);"></div>
-<span style="font-size:12px; color:#666;">Excellent transit but height limits prevent density</span>
+<div style="margin-left:26px; margin-bottom:12px;">
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+    <span class="legend-square" style="border:2px solid #ff0000;"></span>
+    <span style="font-size:12px; color:#666;">Height Restricted</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <span class="legend-square" style="border:2px solid #9932CC;"></span>
+    <span style="font-size:12px; color:#666;">Transit Gap</span>
+  </div>
 </div>
-<div style="display:flex; align-items:center; gap:8px;">
-<div style="width:18px; height:18px; border:2px solid #9932CC; background:rgba(255,255,255,0.3);"></div>
-<span style="font-size:12px; color:#666;">Poor transit does not serve allowed density</span>
+<label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:8px; font-size:14px;">
+  <input type="checkbox" id="flood-toggle" />
+  <svg width="18" height="18"><rect width="18" height="18" fill="#999"/><line x1="0" y1="18" x2="18" y2="0" stroke="rgba(0,80,150,0.8)" stroke-width="2.5"/></svg>
+  Flood constraints
+</label>
+<label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:8px; font-size:14px;">
+  <input type="checkbox" id="parking-toggle" />
+  <svg width="18" height="18"><rect width="18" height="18" fill="#999"/><line x1="0" y1="0" x2="18" y2="18" stroke="rgba(220,120,0,0.8)" stroke-width="2.5"/></svg>
+  Parking opportunity
+</label>
 </div>
-</div>
-</div>
-</div>
+</div> <!-- CLOSE legend-content then legend -->
 
 <div id="info-panel" class="hidden" aria-label="Info panel">
 <button id="close-panel" type="button" aria-label="Close panel">&times;</button>
-<h2>PTAL Score: <span id="ptal-score"></span></h2>
+<h2>PTAL <span id="ptal-score"></span> <a id="grid-id-link" href="#" style="font-size:0.7em; color:#666; text-decoration:none; border:1px solid #ddd; padding:2px 6px; border-radius:4px; margin-left:8px;">...</a></h2>
 <p class="category-label" id="category-label"></p>
 
 <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
 <span id="flood-badge" style="display:none; padding:4px 10px; border-radius:6px; background:#e3f2fd; color:#0d47a1; font-size:12px; font-weight:600;">
-🌊 Flood Area
+⚠️ Flood Area
 </span>
 <span id="parking-badge" style="display:none; padding:4px 10px; border-radius:6px; background:#fff3cd; color:#856404; font-size:12px; font-weight:600;">
-🅿️ Parking Excess
+⚠️ Parking Excess
 </span>
 </div>
 
-<div id="capacity-info">
-<strong>Effective Capacity:</strong> <span id="total-capacity"></span>
-<p style="font-size:0.85em; color:#666; margin-top:6px;">
-Accounts for vehicle capacity, reliability, and route overlap
-</p>
-</div>
-
-<h3>Planning Controls</h3>
-<table>
-<tr><td>Zone</td><td id="zone-code"></td></tr>
-<tr><td>Current Maximum Height</td><td id="max-height"></td></tr>
-<tr style="background:#e8f5e9;">
-<td><strong>Recommended Height</strong></td>
-<td><strong id="recommended-height"></strong></td>
-</tr>
-</table>
-
-<div id="planning-mismatch-warning" class="mismatch-warning" style="display:none;">
-<p>⚠️ <strong>Planning Mismatch:</strong> Excellent transit but height limits prevent density</p>
+<div id="planning-mismatch-warning" class="mismatch-warning" style="display:none; background:#ffe6e6; border-left:4px solid #ff0000;">
+<p>⚠️ <strong>Height Restricted:</strong> Excellent transit but height limits prevent density</p>
 </div>
 
 <div id="transit-gap-warning" class="mismatch-warning" style="display:none; background:#f3e5f5; border-left:4px solid #9932CC;">
 <p>⚠️ <strong>Transit Gap:</strong> Poor transit does not serve allowed density</p>
 </div>
 
-<h3>Nearest Transport</h3>
-<ul id="nearby-stops"></ul>
+<div id="flood-explainer" class="mismatch-warning" style="display:none; background:#e3f2fd; border-left:4px solid #0077BE;">
+<p style="font-size:0.85em;">⚠️ <strong>Flood Constraints:</strong> Flood planning area suggests flooding is likely, constraining development</p>
 </div>
+
+<div id="parking-explainer" class="mismatch-warning" style="display:none; background:#fff8e1; border-left:4px solid #FFA500;">
+<p style="font-size:0.85em;">⚠️ <strong>Parking Opportunity:</strong> Public transport values support a lower parking rate than zoned</p>
+</div>
+
+<h3>Planning Controls</h3>
+<table>
+<tr><td>Zone</td><td id="zone-code"></td></tr>
+<tr><td>Parking Zone</td><td id="parking-zone"></td></tr>
+<tr><td>Current Max Height</td><td id="max-height"></td></tr>
+<tr style="background:#e8f5e9;">
+<td><strong>Recommended Height</strong></td>
+<td><strong id="recommended-height"></strong></td>
+</tr>
+<tr><td>Current Parking</td><td id="current-parking"></td></tr>
+<tr style="background:#e8f5e9;">
+<td><strong>Recommended Parking</strong></td>
+<td><strong id="recommended-parking"></strong></td>
+</tr>
+</table>
+
+<h3>Top Services <span style="font-weight:normal; font-size:0.85em; color:#666;">(by mode)</span></h3>
+<ul id="nearby-stops"></ul>
+</div> <!-- INFO PANEL CLOSES HERE -->
 
 <footer>
 <p>
@@ -115,12 +134,13 @@ Data: Brisbane City Council, TransLink
 <span id="version"></span> · <span id="ptal-thresholds"></span>
 </div>
 <div class="disclaimer">
-<strong>Note:</strong> Height controls are approximate. Grid cells may span multiple zones – displayed zone represents dominant zoning. Local area overlays, character codes, and site-specific provisions may apply.
+<strong>Note:</strong> Height controls, parking rates, flood planning areas are all approximate given 100m grid size. Grid cells may span multiple zones — displayed zone represents dominant zoning. Effective capacity accounts for vehicle capacity, reliability, and route overlap. Refer methodology above for further detail.
 </div>
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script src="map.js" defer></script>
+
 </body>
 </html>

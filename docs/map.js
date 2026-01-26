@@ -1,18 +1,25 @@
 /* =========================================================
-   Brisbane PTAL Explorer — map.js (updated v0.6 - Week 1)
+   Brisbane PTAL Explorer — map.js (updated v0.8)
    ========================================================= */
 
-const APP_VERSION = "v0.6 – Jan 2026";
-const PTAL_THRESHOLDS_TEXT = "PTAL thresholds: 1 <10 · 2 ≥10 · 3 ≥50 · 4 ≥120";
+const APP_VERSION = "v0.8 — Jan 2026";
+const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
 
-const PTAL_GZ_URL = "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz";
-const PTAL_JSON_URL = "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson";
+// FOR LOCALHOST TESTING - use these:
+const PTAL_GZ_URL = "brisbane_ptal_final.geojson.gz";
+const PTAL_JSON_URL = "brisbane_ptal_final.geojson";
+
+// FOR PRODUCTION - use these:
+// const PTAL_GZ_URL = "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz";
+// const PTAL_JSON_URL = "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson";
 
 const NOMINATIM_EMAIL = "";
 
 let ptalLayer = null;
 let ptalData = null;
 let showMismatchesOnly = false;
+let showFloodOverlay = false;
+let showParkingOverlay = false;
 let searchMarker = null;
 
 const map = L.map("map").setView([-27.4705, 153.0260], 12);
@@ -28,29 +35,143 @@ L.control.scale({
   metric: true
 }).addTo(map);
 
-function getPTALColor(ptal) {
-  switch (ptal) {
-    case 4: return "#1a9850";
-    case 3: return "#a6d96a";
-    case 2: return "#fee08b";
-    case 1: return "#d73027";
-    default: return "#cccccc";
-  }
+// PTAL color palette
+const PTAL_COLORS = {
+  '4b': '#006837',
+  '4a': '#1a9850',
+  '3': '#a6d96a',
+  '2': '#fee08b',
+  '1': '#d73027'
+};
+
+// Create composite SVG patterns after map loads
+map.whenReady(() => {
+  setTimeout(() => {
+    const mapPane = map.getPanes().overlayPane;
+    const svg = mapPane.querySelector('svg');
+    
+    if (!svg) return;
+    
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    
+    // Create 15 patterns: 5 PTAL levels × 3 overlay states (flood, parking, both)
+    Object.entries(PTAL_COLORS).forEach(([band, color]) => {
+      
+      // 1. Flood only (blue diagonal)
+      const floodPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+      floodPattern.setAttribute('id', `flood-ptal${band}`);
+      floodPattern.setAttribute('patternUnits', 'userSpaceOnUse');
+      floodPattern.setAttribute('width', '10');
+      floodPattern.setAttribute('height', '10');
+      
+      const floodRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      floodRect.setAttribute('width', '10');
+      floodRect.setAttribute('height', '10');
+      floodRect.setAttribute('fill', color);
+      
+      const floodLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      floodLine.setAttribute('x1', '0');
+      floodLine.setAttribute('y1', '10');
+      floodLine.setAttribute('x2', '10');
+      floodLine.setAttribute('y2', '0');
+      floodLine.setAttribute('stroke', 'rgba(0, 80, 150, 0.8)'); // Darker blue
+      floodLine.setAttribute('stroke-width', '3');
+      
+      floodPattern.appendChild(floodRect);
+      floodPattern.appendChild(floodLine);
+      defs.appendChild(floodPattern);
+      
+      // 2. Parking only (orange diagonal)
+      const parkingPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+      parkingPattern.setAttribute('id', `parking-ptal${band}`);
+      parkingPattern.setAttribute('patternUnits', 'userSpaceOnUse');
+      parkingPattern.setAttribute('width', '10');
+      parkingPattern.setAttribute('height', '10');
+      
+      const parkingRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      parkingRect.setAttribute('width', '10');
+      parkingRect.setAttribute('height', '10');
+      parkingRect.setAttribute('fill', color);
+      
+      const parkingLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      parkingLine.setAttribute('x1', '0');
+      parkingLine.setAttribute('y1', '0');
+      parkingLine.setAttribute('x2', '10');
+      parkingLine.setAttribute('y2', '10');
+      parkingLine.setAttribute('stroke', 'rgba(220, 120, 0, 0.8)'); // Darker orange
+      parkingLine.setAttribute('stroke-width', '3');
+      
+      parkingPattern.appendChild(parkingRect);
+      parkingPattern.appendChild(parkingLine);
+      defs.appendChild(parkingPattern);
+      
+      // 3. Both overlays (crosshatch)
+      const bothPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+      bothPattern.setAttribute('id', `flood-parking-ptal${band}`);
+      bothPattern.setAttribute('patternUnits', 'userSpaceOnUse');
+      bothPattern.setAttribute('width', '10');
+      bothPattern.setAttribute('height', '10');
+      
+      const bothRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bothRect.setAttribute('width', '10');
+      bothRect.setAttribute('height', '10');
+      bothRect.setAttribute('fill', color);
+      
+      const bothLine1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      bothLine1.setAttribute('x1', '0');
+      bothLine1.setAttribute('y1', '10');
+      bothLine1.setAttribute('x2', '10');
+      bothLine1.setAttribute('y2', '0');
+      bothLine1.setAttribute('stroke', 'rgba(0, 119, 190, 0.6)');
+      bothLine1.setAttribute('stroke-width', '2');
+      
+      const bothLine2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      bothLine2.setAttribute('x1', '0');
+      bothLine2.setAttribute('y1', '0');
+      bothLine2.setAttribute('x2', '10');
+      bothLine2.setAttribute('y2', '10');
+      bothLine2.setAttribute('stroke', 'rgba(255, 165, 0, 0.6)');
+      bothLine2.setAttribute('stroke-width', '2');
+      
+      bothPattern.appendChild(bothRect);
+      bothPattern.appendChild(bothLine1);
+      bothPattern.appendChild(bothLine2);
+      defs.appendChild(bothPattern);
+    });
+    
+    svg.insertBefore(defs, svg.firstChild);
+  }, 100);
+});
+
+function getPTALColor(ptal, peak_services) {
+  const band = getPTALBand(ptal, peak_services);
+  return PTAL_COLORS[band.toLowerCase()] || "#cccccc";
 }
 
-function getPTALLabel(ptal) {
-  const labels = { 4: "Excellent", 3: "Good", 2: "Moderate", 1: "Poor" };
-  return labels[ptal] || "Unknown";
+function getPTALBand(ptal, total_capacity) {
+  if (ptal === 4) {
+    if (total_capacity >= 240) return "4B";
+    if (total_capacity >= 120) return "4A";
+  }
+  return ptal.toString();
 }
 
-function getRecommendedHeight(ptal) {
-  switch (ptal) {
-    case 4: return "15+ storeys";
-    case 3: return "8–15 storeys";
-    case 2: return "3–8 storeys";
-    case 1: return "2–3 storeys";
-    default: return "N/A";
-  }
+function getPTALLabel(ptal, total_capacity) {
+  const band = getPTALBand(ptal, total_capacity);
+  if (band === "4B") return "Excellent";
+  if (band === "4A") return "Very Good";
+  const labels = { '3': "Good", '2': "Moderate", '1': "Poor" };
+  return labels[band] || "Unknown";
+}
+
+function getRecommendedHeight(ptal, total_capacity) {
+  const band = getPTALBand(ptal, total_capacity);
+  if (band === "4B") return "30+ storeys";
+  if (band === "4A") return "16–30 storeys";
+  if (band === "3") return "9–15 storeys";
+  if (band === "2") return "4–8 storeys";
+  if (band === "1") return "Up to 3 storeys";
+  return "N/A";
 }
 
 function getModeIcon(mode) {
@@ -68,10 +189,18 @@ function getModeLabel(mode) {
 }
 
 function hasPlanningMismatch(props) {
-  const heightMismatch = props.height_mismatch;
+  const band = getPTALBand(props.ptal, props.total_capacity);
   const zone = props.Zone_code;
-  if (!zone || zone === "Unknown" || zone === "Mixed") return false;
-  return heightMismatch === "under" || heightMismatch === "over";
+  const maxStoreys = Number(props.max_storeys);
+  
+  // Only check 4A/4B
+  if (band !== "4A" && band !== "4B") return false;
+  
+  // Define recommended minimums
+  const minStoreys = band === "4B" ? 30 : 16;
+  
+  // Flag if current max is below recommended minimum
+  return Number.isFinite(maxStoreys) && maxStoreys < minStoreys;
 }
 
 function hasFloodConstraint(props) {
@@ -80,15 +209,22 @@ function hasFloodConstraint(props) {
 }
 
 function hasParkingMismatch(props) {
-  return props.parking_mismatch === true;
+  const ptal = Number(props.ptal);
+  const parkingZone = String(props.parking_zone);
+  
+  // Only show for PTAL 3+ (good transit supports lower parking)
+  if (ptal < 3) return false;
+  
+  // Exclude city core, but INCLUDE city frame
+  const isCityCore = parkingZone === "334" || parkingZone === "334.0";
+  
+  return props.parking_mismatch === true && !isCityCore;
 }
 
 function hasTransitGap(props) {
   const ptal = Number(props.ptal);
-  const maxStoreys = Number(props.max_storeys);
-  const zone = props.Zone_code;
-  if (!zone || zone === "Unknown" || zone === "Mixed") return false;
-  return Number.isFinite(ptal) && Number.isFinite(maxStoreys) && ptal <= 1 && maxStoreys >= 4;
+  // Only show PTAL 1 cells with transit gap
+  return ptal === 1 && props.transit_gap === true;
 }
 
 function $(id) { return document.getElementById(id); }
@@ -99,6 +235,7 @@ function showEl(id, show) { const el = $(id); if (el) el.style.display = show ? 
 function style(feature) {
   const props = feature.properties || {};
   const ptal = Number(props.ptal);
+  const total_capacity = Number(props.total_capacity);
 
   if (!Number.isFinite(ptal)) return { fillOpacity: 0, opacity: 0, stroke: false };
   
@@ -107,13 +244,16 @@ function style(feature) {
   const flood = hasFloodConstraint(props);
   const parking = hasParkingMismatch(props);
 
+  // When mismatch filter active, hide non-mismatch cells
   if (showMismatchesOnly && !planningMismatch && !transitGap) {
     return { fillOpacity: 0, opacity: 0, stroke: false };
   }
 
+  // Default: white border, weight 1
   let borderColor = "white";
   let borderWeight = 1;
   
+  // Planning mismatch cells ALWAYS get colored borders (regardless of toggle)
   if (planningMismatch) {
     borderColor = "#ff0000";
     borderWeight = 2;
@@ -122,18 +262,24 @@ function style(feature) {
     borderWeight = 2;
   }
 
-  const className = [
-    flood ? 'flood-hatch' : '',
-    parking ? 'parking-hatch' : ''
-  ].filter(Boolean).join(' ');
+  const band = getPTALBand(ptal, total_capacity).toLowerCase();
+  
+  let fillColor = getPTALColor(ptal, total_capacity);
+  
+  if (showFloodOverlay && flood && showParkingOverlay && parking) {
+    fillColor = `url(#flood-parking-ptal${band})`;
+  } else if (showFloodOverlay && flood) {
+    fillColor = `url(#flood-ptal${band})`;
+  } else if (showParkingOverlay && parking) {
+    fillColor = `url(#parking-ptal${band})`;
+  }
 
   return {
-    fillColor: getPTALColor(ptal),
+    fillColor: fillColor,
     weight: borderWeight,
     color: borderColor,
-    opacity: 0.7,
-    fillOpacity: 0.6,
-    className: className || undefined
+    opacity: 0.8,
+    fillOpacity: 0.6
   };
 }
 
@@ -163,10 +309,15 @@ function onEachFeature(feature, layer) {
     click: showInfo,
   });
 
-  const ptal = Number(feature.properties?.ptal);
+  const props = feature.properties || {};
+  const ptal = Number(props.ptal);
+  const total_capacity = Number(props.total_capacity);
+  const band = getPTALBand(ptal, total_capacity);
+  
   if (Number.isFinite(ptal)) {
+    const label = getPTALLabel(ptal, total_capacity);
     layer.bindTooltip(
-      `PTAL ${ptal} (${getPTALLabel(ptal)})<br>Click for details`,
+      `PTAL ${band} (${label})<br>Click for details`,
       { sticky: true, opacity: 0.9 }
     );
   }
@@ -198,22 +349,71 @@ if (closeBtn) {
 function showInfo(e) {
   const props = e.target?.feature?.properties || {};
   const ptal = Number(props.ptal);
+  const total_capacity = Number(props.total_capacity);
+  
   if (!Number.isFinite(ptal)) return;
 
-  setText("ptal-score", ptal);
-  setText("category-label", getPTALLabel(ptal));
+  const band = getPTALBand(ptal, total_capacity);
+  const gridId = props.id || "Unknown";
+  const capacity = props.total_capacity;
+  
+  // Format grid ID
+  const gridMatch = gridId.match(/r([+-]?\d+)_c([+-]?\d+)/);
+  let displayId = gridId;
+  
+  if (gridMatch) {
+    const row = parseInt(gridMatch[1]);
+    const col = parseInt(gridMatch[2]);
+    const letter = String.fromCharCode(65 + Math.abs(row));
+    const number = Math.abs(col);
+    displayId = `${letter}${number}`;
+  }
+  
+  // Set PTAL with capacity
+  setText("ptal-score", `${band} · ${capacity ? Math.round(capacity) : '0'} units/hr`);
+  setText("category-label", getPTALLabel(ptal, total_capacity));
+  
+  // Set grid link
+  const gridLink = $("grid-id-link");
+  if (gridLink) {
+    setText("grid-id-link", displayId);
+    gridLink.href = `?cell=${gridId}`;
+  }
+  
   setText("zone-code", props.Zone_code || "Unknown");
-  setText("recommended-height", getRecommendedHeight(ptal));
-
+  setHTML("recommended-height", getRecommendedHeight(ptal, total_capacity));
+  
   const maxStoreys = Number(props.max_storeys);
   const heightDisplay =
     Number.isFinite(maxStoreys) && maxStoreys >= 90
-      ? "Unlimited*<br><small style='color:#666;'>*Airport height limits apply</small>"
+      ? "Unlimited*<br><small style='color:#666;'"
       : Number.isFinite(maxStoreys)
         ? `${maxStoreys} storeys`
         : "Unknown";
   setHTML("max-height", heightDisplay);
 
+  // Show parking rates with defaults for Unknown zones in city core/frame
+  let bccParking = props.bcc_parking;
+  const ptalParking = props.ptal_parking;
+  
+    // Show parking zone
+  const parkingZone = props.parking_zone;
+  let zoneLabel = "General"; // default
+  
+  if (parkingZone === "334" || parkingZone === "334.0") {
+    zoneLabel = "City Core";
+  } else if (parkingZone === "335" || parkingZone === "335.0") {
+    zoneLabel = "City Frame";
+  } else if (!parkingZone || parkingZone === "null" || parkingZone === "undefined") {
+    zoneLabel = "General";
+  }
+  
+  setText("parking-zone", zoneLabel);
+  
+  setText("current-parking", bccParking ? `${bccParking} spaces/2-bed` : "Unknown");
+  setText("recommended-parking", ptalParking ? `${ptalParking} spaces/2-bed` : "Unknown");
+
+  
   const planningMismatch = hasPlanningMismatch(props);
   const transitGap = hasTransitGap(props);
   const flood = hasFloodConstraint(props);
@@ -221,18 +421,13 @@ function showInfo(e) {
   
   showEl("planning-mismatch-warning", planningMismatch);
   showEl("transit-gap-warning", transitGap);
+  showEl("flood-explainer", flood);
+  showEl("parking-explainer", parking);
   showEl("flood-badge", flood);
-  showEl("parking-badge", parking);
+  showEl("parking-badge", false);
 
   if (flood) {
     setText("flood-badge", `🌊 ${props.flood_constraint}`);
-  }
-
-  if (props.total_capacity !== undefined && props.total_capacity !== null && props.total_capacity !== "") {
-    showEl("capacity-info", true);
-    setText("total-capacity", `${props.total_capacity} effective units/hr`);
-  } else {
-    showEl("capacity-info", false);
   }
 
   const stopsList = $("nearby-stops");
@@ -247,21 +442,29 @@ function showInfo(e) {
       if (!Array.isArray(stops) || stops.length === 0) {
         stopsList.innerHTML = "<li style='color:#999;'>No stops within catchment</li>";
       } else {
-        stops.slice(0, 10).forEach((stop) => {
+        const modeRank = { train: 1, ferry: 2, busway: 3, bus: 4 };
+        
+        const sortedStops = stops
+          .sort((a, b) => {
+            const rankDiff = (modeRank[a.mode] || 99) - (modeRank[b.mode] || 99);
+            return rankDiff !== 0 ? rankDiff : (a.distance_m || 999) - (b.distance_m || 999);
+          })
+          .slice(0, 3);
+
+        sortedStops.forEach((stop) => {
           const li = document.createElement("li");
           const mode = stop.mode || "bus";
           const name = stop.stop_name || "Stop";
-          const stopCode = stop.stop_id ? ` (${stop.stop_id})` : '';
+          const stopId = stop.stop_id || "";
           const dist = stop.distance_m ?? "?";
-          const walk = stop.walk_time_min ?? "?";
+          const walkTime = stop.walk_time_min ?? "?";
           const modeLabel = getModeLabel(mode);
 
           li.innerHTML = `
-            ${getModeIcon(mode)} <strong>${name}</strong>${stopCode}<br>
-            <span style="color:#666;font-size:0.9em;">
-              ${modeLabel} • ${dist} m • ${walk} min walk
+            ${getModeIcon(mode)} <strong>${name}</strong> ${stopId ? `(${stopId})` : ''}<br>
+            <span style="color:#666;font-size:0.85em;">
+              ${modeLabel} • ${dist}m • ${walkTime} min walk
             </span>`;
-          li.style.marginBottom = "10px";
           stopsList.appendChild(li);
         });
       }
@@ -374,15 +577,23 @@ if (legendToggle && legendContent && legend) {
 }
 
 const mismatchToggle = $("mismatch-toggle");
+const heightToggle = $("height-toggle");
+const transitToggle = $("transit-toggle");
+const floodToggle = $("flood-toggle");
+const parkingToggle = $("parking-toggle");
 
 function applyFilter() {
   showMismatchesOnly = mismatchToggle ? mismatchToggle.checked : false;
+  showFloodOverlay = floodToggle ? floodToggle.checked : false;
+  showParkingOverlay = parkingToggle ? parkingToggle.checked : false;
   if (ptalLayer) ptalLayer.setStyle(style);
 }
 
-if (mismatchToggle) {
-  mismatchToggle.addEventListener("change", applyFilter);
-}
+if (mismatchToggle) mismatchToggle.addEventListener("change", applyFilter);
+if (heightToggle) heightToggle.addEventListener("change", applyFilter);
+if (transitToggle) transitToggle.addEventListener("change", applyFilter);
+if (floodToggle) floodToggle.addEventListener("change", applyFilter);
+if (parkingToggle) parkingToggle.addEventListener("change", applyFilter);
 
 const searchBtn = $("search-btn");
 const searchInput = $("address-input");

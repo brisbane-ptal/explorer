@@ -44,7 +44,6 @@ header p{
   opacity: 0.95;
 }
 
-/* A single row for search + burger (works desktop + mobile) */
 .header-controls{
   margin: 12px auto 0;
   max-width: 920px;
@@ -88,7 +87,6 @@ header p{
 }
 #search-btn:hover{ filter: brightness(0.96); }
 
-/* Burger button (hidden on desktop by default; shown on mobile) */
 #legend-burger{
   display: none;
   width: 42px;
@@ -105,7 +103,7 @@ header p{
    Map
    ============================== */
 #map{
-  height: calc(100vh - 170px); /* header+controls+footer room */
+  height: calc(100vh - 170px);
   width: 100%;
   position: relative;
   z-index: 0;
@@ -146,7 +144,7 @@ header p{
 
 #legend h4{
   font-size: 0.95rem;
-  margin: 12px 0 8px 0;
+  margin: 8px 0 8px 0;
   color: #555;
 }
 
@@ -166,38 +164,48 @@ header p{
   font-size: 0.95rem;
 }
 
-.legend-color{
-  width: 30px;
+.legend-square{
+  width: 18px;
   height: 18px;
-  border-radius: 4px;
+  border-radius: 2px;
   border: 1px solid #ccc;
+  flex-shrink: 0;
 }
 
-.ptal-4{ background:#1a9850; }
+.ptal-4b{ background:#006837; }
+.ptal-4a{ background:#1a9850; }
 .ptal-3{ background:#a6d96a; }
 .ptal-2{ background:#fee08b; }
 .ptal-1{ background:#d73027; }
 
-/* Week 1 overlay hatching */
-.flood-hatch {
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 8px,
-    rgba(0, 119, 190, 0.25) 8px,
-    rgba(0, 119, 190, 0.25) 10px
-  ) !important;
+/* SVG overlay patterns - target path elements with composite pattern classes */
+path.flood-ptal4b,
+path.flood-ptal4a,
+path.flood-ptal3,
+path.flood-ptal2,
+path.flood-ptal1 {
+  fill: url(#flood-ptal4b) !important;
 }
 
-.parking-hatch {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 8px,
-    rgba(255, 165, 0, 0.25) 8px,
-    rgba(255, 165, 0, 0.25) 10px
-  ) !important;
-}
+/* SVG overlay patterns - target child path elements */
+.flood-ptal4b path { fill: url(#flood-ptal4b) !important; }
+.flood-ptal4a path { fill: url(#flood-ptal4a) !important; }
+.flood-ptal3 path { fill: url(#flood-ptal3) !important; }
+.flood-ptal2 path { fill: url(#flood-ptal2) !important; }
+.flood-ptal1 path { fill: url(#flood-ptal1) !important; }
+
+.parking-ptal4b path { fill: url(#parking-ptal4b) !important; }
+.parking-ptal4a path { fill: url(#parking-ptal4a) !important; }
+.parking-ptal3 path { fill: url(#parking-ptal3) !important; }
+.parking-ptal2 path { fill: url(#parking-ptal2) !important; }
+.parking-ptal1 path { fill: url(#parking-ptal1) !important; }
+
+.flood-parking-ptal4b path { fill: url(#flood-parking-ptal4b) !important; }
+.flood-parking-ptal4a path { fill: url(#flood-parking-ptal4a) !important; }
+.flood-parking-ptal3 path { fill: url(#flood-parking-ptal3) !important; }
+.flood-parking-ptal2 path { fill: url(#flood-parking-ptal2) !important; }
+.flood-parking-ptal1 path { fill: url(#flood-parking-ptal1) !important; }
+
 .legend-divider{
   margin: 12px 0;
   padding-top: 12px;
@@ -211,39 +219,47 @@ header p{
   line-height: 1.3;
 }
 
-#mismatch-toggle{
+#mismatch-toggle, #flood-toggle, #parking-toggle{
   transform: translateY(1px);
   cursor: pointer;
 }
 
-/* Info panel desktop */
+/* Info panel desktop - SMALLER */
 #info-panel{
   position: absolute;
   top: 190px;
-  left: 16px;
-  width: 360px;
+  left: 16px;  /* Was on right, move back to left */
+  width: 320px;
   max-height: calc(100vh - 250px);
   z-index: calc(var(--z-panel) + 1);
-  padding: 18px 18px 14px;
+  padding: 14px 14px 12px;
   overflow-y: auto;
 }
 
-/* The "hidden" class is allowed, but by default we want it visible on desktop. */
 #info-panel.hidden{ display: none; }
 
-/* Close button */
 #close-panel{
   position: absolute;
-  top: 10px;
-  right: 12px;
+  top: 8px;
+  right: 10px;
   background: none;
   border: none;
-  font-size: 2rem;
+  font-size: 1.8rem;
   cursor: pointer;
   color: #999;
   line-height: 1;
 }
 #close-panel:hover{ color:#333; }
+
+#info-panel h2{
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+}
+
+#info-panel h3{
+  font-size: 1rem;
+  margin: 12px 0 8px 0;
+}
 
 #capacity-info{
   background: #e3f2fd;
@@ -252,32 +268,31 @@ header p{
   margin: 10px 0;
 }
 
-/* Warning boxes */
 .mismatch-warning{
   background:#fff3cd;
   border-left: 4px solid #ffc107;
-  padding: 12px;
+  padding: 10px;
   border-radius: 8px;
-  margin-top: 12px;
+  margin-top: 10px;
   line-height: 1.4;
 }
 
 .mismatch-warning p{
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 table{
   width: 100%;
-  margin: 12px 0;
+  margin: 10px 0;
   border-collapse: collapse;
+  font-size: 0.9rem;
 }
 table td{
-  padding: 8px;
+  padding: 6px 8px;
   border-bottom: 1px solid #eee;
 }
 
-/* Nearby stops list */
 #nearby-stops{
   list-style: none;
   padding: 0;
@@ -286,7 +301,8 @@ table td{
 #nearby-stops li{
   padding: 8px 0;
   border-bottom: 1px solid #f0f0f0;
-  line-height: 1.4;
+  line-height: 1.3;
+  font-size: 0.9rem;
 }
 
 #nearby-stops li:last-child{
@@ -366,7 +382,6 @@ footer .disclaimer strong{
     height: calc(100vh - 175px);
   }
 
-  /* Mobile info panel: slide-up drawer */
   #info-panel{
     position: fixed;
     left: 12px;
@@ -374,7 +389,7 @@ footer .disclaimer strong{
     bottom: 12px;
     top: auto;
     width: auto;
-    max-height: 55vh;
+    max-height: 50vh;
     transform: translateY(120%);
     transition: transform 0.25s ease;
     z-index: var(--z-modal);
@@ -384,12 +399,11 @@ footer .disclaimer strong{
     transform: translateY(0);
   }
 
-  /* Mobile legend: header-controlled drawer */
   #legend{
     position: fixed;
     left: 12px;
     right: 12px;
-    top: 160px;       /* lowered from 110px to clear search controls and zoom buttons */
+    top: 160px;
     width: auto;
     max-height: 65vh;
     overflow-y: auto;
@@ -399,12 +413,10 @@ footer .disclaimer strong{
     padding: 14px;
   }
 
-  /* When JS toggles .open, legend slides down */
   #legend.open{
     transform: translateY(0);
   }
 
-  /* Hide desktop toggle on mobile */
   #legend-toggle{
     display: none !important;
   }
