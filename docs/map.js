@@ -2,16 +2,55 @@
    Brisbane PTAL Explorer — map.js (updated v0.8)
    ========================================================= */
 
-const APP_VERSION = "v0.8 — Jan 2026";
+const APP_VERSION = "v0.8.1";  // ← Increment this after running pipeline
 const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
 
-// FOR LOCALHOST TESTING - use these:
-// const PTAL_GZ_URL = "brisbane_ptal_final.geojson.gz";
-// const PTAL_JSON_URL = "brisbane_ptal_final.geojson";
+// Current (localhost):
+//const PTAL_GZ_URL = `brisbane_ptal_final.geojson.gz?v=${APP_VERSION}`;
+//const PTAL_JSON_URL = `brisbane_ptal_final.geojson?v=${APP_VERSION}`;
 
-// FOR PRODUCTION - use these:
-const PTAL_GZ_URL = "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz";
-const PTAL_JSON_URL = "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson";
+// Change to (production):
+const PTAL_GZ_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz?v=${APP_VERSION}`;
+const PTAL_JSON_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson?v=${APP__VERSION}`;
+
+async function loadPTAL() {
+  let data = null;
+
+  // Try .gz first (preferred - much smaller)
+  try {
+    const resGz = await fetch(PTAL_GZ_URL, { 
+      cache: "default"  // Allow browser caching
+    });
+    
+    if (resGz.ok) {
+      const buffer = await resGz.arrayBuffer();
+      const decompressed = pako.ungzip(new Uint8Array(buffer), { to: "string" });
+      data = JSON.parse(decompressed);
+      console.log("✓ Loaded PTAL (gz):", data?.features?.length ?? 0, "features");
+      return addPTALLayer(data);  // Exit early on success
+    }
+  } catch (err) {
+    console.warn("⚠️  .gz failed, trying .json fallback:", err.message);
+  }
+
+  // Fallback to uncompressed .json only if .gz fails
+  try {
+    const resJson = await fetch(PTAL_JSON_URL, { 
+      cache: "default" 
+    });
+    
+    if (resJson.ok) {
+      data = await resJson.json();
+      console.log("✓ Loaded PTAL (json):", data?.features?.length ?? 0, "features");
+      return addPTALLayer(data);
+    } else {
+      throw new Error(`HTTP ${resJson.status}`);
+    }
+  } catch (err) {
+    console.error("❌ Failed to load PTAL data:", err);
+    alert("Failed to load map data. Please refresh the page.");
+  }
+}
 
 const NOMINATIM_EMAIL = "";
 
@@ -44,103 +83,121 @@ const PTAL_COLORS = {
   '1': '#d73027'
 };
 
-// Create composite SVG patterns after map loads
-map.whenReady(() => {
-  setTimeout(() => {
-    const mapPane = map.getPanes().overlayPane;
-    const svg = mapPane.querySelector('svg');
+// Create SVG patterns immediately (no async delay)
+function createSVGPatterns() {
+  const mapPane = map.getPanes().overlayPane;
+  let svg = mapPane.querySelector('svg');
+  
+  // Create SVG if it doesn't exist
+  if (!svg) {
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'leaflet-zoom-animated');
+    mapPane.appendChild(svg);
+  }
+  
+  // Don't recreate if patterns already exist
+  if (svg.querySelector('defs')) {
+    return;
+  }
+  
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  
+  // Create 15 patterns: 5 PTAL levels × 3 overlay states (flood, parking, both)
+  Object.entries(PTAL_COLORS).forEach(([band, color]) => {
     
-    if (!svg) return;
+    // 1. Flood only (blue diagonal)
+    const floodPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+    floodPattern.setAttribute('id', `flood-ptal${band}`);
+    floodPattern.setAttribute('patternUnits', 'userSpaceOnUse');
+    floodPattern.setAttribute('width', '10');
+    floodPattern.setAttribute('height', '10');
     
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const floodRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    floodRect.setAttribute('width', '10');
+    floodRect.setAttribute('height', '10');
+    floodRect.setAttribute('fill', color);
     
-    // Create 15 patterns: 5 PTAL levels × 3 overlay states (flood, parking, both)
-    Object.entries(PTAL_COLORS).forEach(([band, color]) => {
-      
-      // 1. Flood only (blue diagonal)
-      const floodPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-      floodPattern.setAttribute('id', `flood-ptal${band}`);
-      floodPattern.setAttribute('patternUnits', 'userSpaceOnUse');
-      floodPattern.setAttribute('width', '10');
-      floodPattern.setAttribute('height', '10');
-      
-      const floodRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      floodRect.setAttribute('width', '10');
-      floodRect.setAttribute('height', '10');
-      floodRect.setAttribute('fill', color);
-      
-      const floodLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      floodLine.setAttribute('x1', '0');
-      floodLine.setAttribute('y1', '10');
-      floodLine.setAttribute('x2', '10');
-      floodLine.setAttribute('y2', '0');
-      floodLine.setAttribute('stroke', 'rgba(0, 80, 150, 0.8)'); // Darker blue
-      floodLine.setAttribute('stroke-width', '3');
-      
-      floodPattern.appendChild(floodRect);
-      floodPattern.appendChild(floodLine);
-      defs.appendChild(floodPattern);
-      
-      // 2. Parking only (orange diagonal)
-      const parkingPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-      parkingPattern.setAttribute('id', `parking-ptal${band}`);
-      parkingPattern.setAttribute('patternUnits', 'userSpaceOnUse');
-      parkingPattern.setAttribute('width', '10');
-      parkingPattern.setAttribute('height', '10');
-      
-      const parkingRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      parkingRect.setAttribute('width', '10');
-      parkingRect.setAttribute('height', '10');
-      parkingRect.setAttribute('fill', color);
-      
-      const parkingLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      parkingLine.setAttribute('x1', '0');
-      parkingLine.setAttribute('y1', '0');
-      parkingLine.setAttribute('x2', '10');
-      parkingLine.setAttribute('y2', '10');
-      parkingLine.setAttribute('stroke', 'rgba(220, 120, 0, 0.8)'); // Darker orange
-      parkingLine.setAttribute('stroke-width', '3');
-      
-      parkingPattern.appendChild(parkingRect);
-      parkingPattern.appendChild(parkingLine);
-      defs.appendChild(parkingPattern);
-      
-      // 3. Both overlays (crosshatch)
-      const bothPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-      bothPattern.setAttribute('id', `flood-parking-ptal${band}`);
-      bothPattern.setAttribute('patternUnits', 'userSpaceOnUse');
-      bothPattern.setAttribute('width', '10');
-      bothPattern.setAttribute('height', '10');
-      
-      const bothRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      bothRect.setAttribute('width', '10');
-      bothRect.setAttribute('height', '10');
-      bothRect.setAttribute('fill', color);
-      
-      const bothLine1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      bothLine1.setAttribute('x1', '0');
-      bothLine1.setAttribute('y1', '10');
-      bothLine1.setAttribute('x2', '10');
-      bothLine1.setAttribute('y2', '0');
-      bothLine1.setAttribute('stroke', 'rgba(0, 119, 190, 0.6)');
-      bothLine1.setAttribute('stroke-width', '2');
-      
-      const bothLine2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      bothLine2.setAttribute('x1', '0');
-      bothLine2.setAttribute('y1', '0');
-      bothLine2.setAttribute('x2', '10');
-      bothLine2.setAttribute('y2', '10');
-      bothLine2.setAttribute('stroke', 'rgba(255, 165, 0, 0.6)');
-      bothLine2.setAttribute('stroke-width', '2');
-      
-      bothPattern.appendChild(bothRect);
-      bothPattern.appendChild(bothLine1);
-      bothPattern.appendChild(bothLine2);
-      defs.appendChild(bothPattern);
-    });
+    const floodLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    floodLine.setAttribute('x1', '0');
+    floodLine.setAttribute('y1', '10');
+    floodLine.setAttribute('x2', '10');
+    floodLine.setAttribute('y2', '0');
+    floodLine.setAttribute('stroke', 'rgba(0, 80, 150, 0.8)');
+    floodLine.setAttribute('stroke-width', '3');
     
-    svg.insertBefore(defs, svg.firstChild);
-  }, 100);
+    floodPattern.appendChild(floodRect);
+    floodPattern.appendChild(floodLine);
+    defs.appendChild(floodPattern);
+    
+    // 2. Parking only (orange diagonal)
+    const parkingPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+    parkingPattern.setAttribute('id', `parking-ptal${band}`);
+    parkingPattern.setAttribute('patternUnits', 'userSpaceOnUse');
+    parkingPattern.setAttribute('width', '10');
+    parkingPattern.setAttribute('height', '10');
+    
+    const parkingRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    parkingRect.setAttribute('width', '10');
+    parkingRect.setAttribute('height', '10');
+    parkingRect.setAttribute('fill', color);
+    
+    const parkingLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    parkingLine.setAttribute('x1', '0');
+    parkingLine.setAttribute('y1', '0');
+    parkingLine.setAttribute('x2', '10');
+    parkingLine.setAttribute('y2', '10');
+    parkingLine.setAttribute('stroke', 'rgba(220, 120, 0, 0.8)');
+    parkingLine.setAttribute('stroke-width', '3');
+    
+    parkingPattern.appendChild(parkingRect);
+    parkingPattern.appendChild(parkingLine);
+    defs.appendChild(parkingPattern);
+    
+    // 3. Both overlays (crosshatch)
+    const bothPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+    bothPattern.setAttribute('id', `flood-parking-ptal${band}`);
+    bothPattern.setAttribute('patternUnits', 'userSpaceOnUse');
+    bothPattern.setAttribute('width', '10');
+    bothPattern.setAttribute('height', '10');
+    
+    const bothRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bothRect.setAttribute('width', '10');
+    bothRect.setAttribute('height', '10');
+    bothRect.setAttribute('fill', color);
+    
+    const bothLine1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    bothLine1.setAttribute('x1', '0');
+    bothLine1.setAttribute('y1', '10');
+    bothLine1.setAttribute('x2', '10');
+    bothLine1.setAttribute('y2', '0');
+    bothLine1.setAttribute('stroke', 'rgba(0, 119, 190, 0.6)');
+    bothLine1.setAttribute('stroke-width', '2');
+    
+    const bothLine2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    bothLine2.setAttribute('x1', '0');
+    bothLine2.setAttribute('y1', '0');
+    bothLine2.setAttribute('x2', '10');
+    bothLine2.setAttribute('y2', '10');
+    bothLine2.setAttribute('stroke', 'rgba(255, 165, 0, 0.6)');
+    bothLine2.setAttribute('stroke-width', '2');
+    
+    bothPattern.appendChild(bothRect);
+    bothPattern.appendChild(bothLine1);
+    bothPattern.appendChild(bothLine2);
+    defs.appendChild(bothPattern);
+  });
+  
+  svg.insertBefore(defs, svg.firstChild);
+}
+
+// Call immediately when map is ready
+map.whenReady(createSVGPatterns);
+
+// Also call after layer is added (defensive)
+map.on('layeradd', function(e) {
+  if (e.layer === ptalLayer) {
+    createSVGPatterns();
+  }
 });
 
 function getPTALColor(ptal, peak_services) {
