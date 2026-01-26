@@ -6,12 +6,12 @@ const APP_VERSION = "v0.8 — Jan 2026";
 const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
 
 // FOR LOCALHOST TESTING - use these:
-const PTAL_GZ_URL = "brisbane_ptal_final.geojson.gz";
-const PTAL_JSON_URL = "brisbane_ptal_final.geojson";
+// const PTAL_GZ_URL = "brisbane_ptal_final.geojson.gz";
+// const PTAL_JSON_URL = "brisbane_ptal_final.geojson";
 
 // FOR PRODUCTION - use these:
-// const PTAL_GZ_URL = "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz";
-// const PTAL_JSON_URL = "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson";
+const PTAL_GZ_URL = "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz";
+const PTAL_JSON_URL = "https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson";
 
 const NOMINATIM_EMAIL = "";
 
