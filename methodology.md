@@ -151,26 +151,20 @@ All catchments use pedestrian network distance (actual walkable paths via footpa
 
 | Band | Threshold | Interpretation |
 |------|-----------|----------------|
-| PTAL 4 | ≥120 effective units/hr | Excellent accessibility; trunk infrastructure with high frequency; turn-up-and-go service |
+| PTAL 4B | ≥240 effective units/hr | Excellent accessibility; trunk infrastructure with high frequency; turn-up-and-go service |
+| PTAL 4A | ≥120 effective units/hr | Very good accessibility; trunk infrastructure with medium frequency; timetable not essential |
 | PTAL 3 | ≥50 effective units/hr | Good accessibility; either lower-frequency trunk OR excellent bus network |
 | PTAL 2 | ≥10 effective units/hr | Basic service; single decent route or multiple infrequent routes; check timetable |
 | PTAL 1 | <10 effective units/hr | Poor connectivity; car-dependent location |
 
 Thresholds calibrated to Brisbane conditions based on sample locations with known accessibility characteristics.
 
-## Calculation process
-
-For each 100m × 100m grid cell:
-
-Here’s the cleaner version without distance decay:
-
------
 
 ## Calculation process
 
 For each 100m × 100m grid cell:
 
-1. Identify all stops within mode-specific catchment distance using pedestrian network routing:
+1. Identify all stops within mode-specific catchment distance using Euclidean network calculation:
 
 - Rail/busway/CityCat stops: within 800m
 - Bus/KittyCat stops: within 400m
