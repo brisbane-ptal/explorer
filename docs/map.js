@@ -396,8 +396,11 @@ if (closeBtn) {
   });
 }
 
+let currentHighlightedLayer = null; // Track highlighted layer globally
+
 function showInfo(e) {
-  const props = e.target?.feature?.properties || {};
+  const layer = e.target;
+  const props = layer?.feature?.properties || {};
   const ptal = Number(props.ptal);
   const total_capacity = Number(props.total_capacity);
   
@@ -407,7 +410,7 @@ function showInfo(e) {
   const gridId = props.id || "Unknown";
   const capacity = props.total_capacity;
   
-  // Format grid ID
+  // Format grid ID for display AND URL
   const gridMatch = gridId.match(/r([+-]?\d+)_c([+-]?\d+)/);
   let displayId = gridId;
   
@@ -419,15 +422,28 @@ function showInfo(e) {
     displayId = `${letter}${number}`;
   }
   
+  // Remove previous highlight
+  if (currentHighlightedLayer && ptalLayer) {
+    ptalLayer.resetStyle(currentHighlightedLayer);
+  }
+  
+  // Apply persistent black highlight to current cell
+  layer.setStyle({
+    weight: 3,
+    color: '#000000',
+    fillOpacity: 0.8
+  });
+  currentHighlightedLayer = layer;
+  
   // Set PTAL with capacity
   setText("ptal-score", `${band} · ${capacity ? Math.round(capacity) : '0'} units/hr`);
   setText("category-label", getPTALLabel(ptal, total_capacity));
   
-  // Set grid link
+  // Set grid link with HUMAN-READABLE ID
   const gridLink = $("grid-id-link");
   if (gridLink) {
     setText("grid-id-link", displayId);
-    gridLink.href = `?cell=${gridId}`;
+    gridLink.href = `?cell=${displayId}`; // Use H8 format, not r+008_c+004
   }
   
   setText("zone-code", props.Zone_code || "Unknown");
@@ -584,7 +600,7 @@ async function loadPTAL() {
 // Handle URL parameters to open specific cells
 function openCellFromURL() {
   const urlParams = new URLSearchParams(window.location.search);
-  const cellId = urlParams.get('cell');
+  let cellId = urlParams.get('cell');
   
   if (!cellId || !ptalData || !ptalLayer) {
     console.log('URL cell check: no cellId, data, or layer yet');
@@ -592,6 +608,16 @@ function openCellFromURL() {
   }
   
   console.log(`Looking for cell: ${cellId}`);
+  
+  // Convert human-readable format (H8) to internal format (r+008_c+004) if needed
+  if (/^[A-Z]\d+$/i.test(cellId)) {
+    const letter = cellId.charAt(0).toUpperCase();
+    const number = parseInt(cellId.slice(1));
+    const row = letter.charCodeAt(0) - 65;
+    const col = number;
+    cellId = `r+${String(row).padStart(3, '0')}_c+${String(col).padStart(3, '0')}`;
+    console.log(`Converted to internal format: ${cellId}`);
+  }
   
   // Find the feature with matching ID
   const feature = ptalData.features.find(f => f.properties.id === cellId);
@@ -614,22 +640,18 @@ function openCellFromURL() {
       const bounds = layer.getBounds();
       map.fitBounds(bounds, { padding: [100, 100], maxZoom: 16 });
       
-      // Highlight the cell temporarily
+      // Apply persistent black highlight
       layer.setStyle({
-        weight: 4,
-        color: '#FF6B00',
+        weight: 3,
+        color: '#000000',
         fillOpacity: 0.8
       });
+      currentHighlightedLayer = layer;
       
       // Open info panel after a brief delay
       setTimeout(() => {
         showInfo({ target: layer });
       }, 500);
-      
-      // Reset highlight after 3 seconds
-      setTimeout(() => {
-        if (ptalLayer) ptalLayer.resetStyle(layer);
-      }, 3000);
     }
   });
   
