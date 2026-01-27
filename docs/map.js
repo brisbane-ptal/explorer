@@ -586,19 +586,30 @@ function openCellFromURL() {
   const urlParams = new URLSearchParams(window.location.search);
   const cellId = urlParams.get('cell');
   
-  if (!cellId || !ptalData) return;
+  if (!cellId || !ptalData || !ptalLayer) {
+    console.log('URL cell check: no cellId, data, or layer yet');
+    return;
+  }
+  
+  console.log(`Looking for cell: ${cellId}`);
   
   // Find the feature with matching ID
   const feature = ptalData.features.find(f => f.properties.id === cellId);
   
   if (!feature) {
-    console.warn(`Cell ${cellId} not found`);
+    console.warn(`Cell ${cellId} not found in data`);
     return;
   }
   
+  console.log(`Found feature for ${cellId}`);
+  
   // Get the Leaflet layer for this feature
+  let found = false;
   ptalLayer.eachLayer(layer => {
     if (layer.feature?.properties?.id === cellId) {
+      found = true;
+      console.log(`Found Leaflet layer for ${cellId}`);
+      
       // Zoom to cell
       const bounds = layer.getBounds();
       map.fitBounds(bounds, { padding: [100, 100], maxZoom: 16 });
@@ -617,10 +628,14 @@ function openCellFromURL() {
       
       // Reset highlight after 3 seconds
       setTimeout(() => {
-        ptalLayer.resetStyle(layer);
+        if (ptalLayer) ptalLayer.resetStyle(layer);
       }, 3000);
     }
   });
+  
+  if (!found) {
+    console.warn(`Layer not found for ${cellId}`);
+  }
 }
 
 // Call after data loads
@@ -637,8 +652,10 @@ function addPTALLayer(data) {
 
   try { map.fitBounds(ptalLayer.getBounds()); } catch (_) {}
   
-  // NEW: Check for URL parameter after layer loads
-  openCellFromURL();
+  // NEW: Wait for layers to fully render before checking URL
+  setTimeout(() => {
+    openCellFromURL();
+  }, 1000); // Give it 1 second to render
 }
 
 const legend = $("legend");
