@@ -14,7 +14,9 @@
    3. [Route dominance decay](#3-route-dominance-decay)  
    4. [Bidirectional counting](#4-bidirectional-counting)  
    5. [Mode-specific catchments with distance decay](#5-mode-specific-catchments-with-distance-decay)  
-   6. [PTAL band thresholds](#6-ptal-band-thresholds)  
+   6. [PTAL band thresholds](#6-ptal-band-thresholds)
+   7. [Parking rate analysis](#7-parking-rate-analysis)
+   8. [Flood planning area overlays](#8-flood-planning-area overlays)
 4. [Calculation process](#calculation-process)  
 5. [Data sources](#data-sources)  
 6. [Limitations and assumptions](#limitations-and-assumptions)  
@@ -39,6 +41,8 @@ The analysis is designed to inform discussions about:
 - Where housing density could be supported by existing transport infrastructure
 - Which areas would benefit from transport investment to enable growth
 - How planning policies align (or don't) with actual accessibility
+- Where parking requirements could be reduced based on transit access
+- How flood planning constraints interact with transit-rich locations
 
 This is an independent analytical tool, not an official planning instrument. It aims to make transport accessibility legible and comparable across Brisbane.
 
@@ -159,6 +163,72 @@ All catchments use pedestrian network distance (actual walkable paths via footpa
 
 Thresholds calibrated to Brisbane conditions based on sample locations with known accessibility characteristics.
 
+**7. Parking rate analysis**
+
+The tool compares Brisbane City Council's current parking minimums against PTAL-informed rates used in comparable cities.
+
+**Current Brisbane City Council parking minimums (including vistor parking):**
+
+| Location type | 1-bed | 2-bed | 3-bed | 4+ bed |
+|--------------|-------|-------|-------|--------|
+| General residential | 1.75 | 2.25 | 2.75 | 3.25 |
+| Within 400m of major interchange* | 1.0 | 1.2 | 1.6 | 2.0 |
+
+*Major public transport interchange or bus routes with 20-minute peak frequency
+
+**PTAL-recommended parking rates (spaces per dwelling):**
+
+| PTAL Band | 2-bed rate | Rationale |
+|-----------|-----------|-----------|
+| 4B/4A (Excellent/Very Good) | 1.05 maximum | Metro-level accessibility enables car-optional living. Comparable to Melbourne CBD (1.0 max), Sydney City Core (0.5-1.0 max) |
+| 3 (Good) | 1.25 | Good transit supports reduced parking. Comparable to Melbourne inner suburbs, Sydney City Frame |
+| 2 (Moderate) | 1.5 | Basic service requires some car ownership. BCC's proposed rate for major interchanges |
+| 1 (Poor) | 2.25 | Car-dependent location. Higher than BCC general rate to reflect true accessibility constraint |
+
+**Comparison to Victorian Government PTAL reforms (December 2024):**
+- PTAL 3-4 areas (train/tram within 400m or <4km from CBD): 2 spaces maximum
+- PTAL 2 areas (serviced by public transport): 1 space minimum
+- PTAL 1 areas (little/no service): 1.2 spaces minimum
+
+Brisbane's rates are more conservative than Victoria's, maintaining higher minimums in transit-rich areas.
+
+**Parking cost impact:**
+At-grade parking: ~$40,000 per space
+Basement parking: ~$80,000-$100,000 per space
+
+Reducing parking from 2.25 to 1.25 spaces per 2-bed unit saves approximately $80,000-$100,000 per dwelling in construction costs in areas requiring structured parking.
+
+**8. Flood planning area overlays**
+
+The tool maps Brisbane City Council's Flood Planning Areas (FPAs) to show where flood constraints intersect with high-accessibility locations.
+
+**Flood Planning Area categories:**
+
+| FPA Category | Flood probability | Development constraints |
+|--------------|------------------|------------------------|
+| FPA1 | <1% annual chance (1-in-100 year) | Severe restrictions; residential generally prohibited |
+| FPA2A | 1-5% annual chance | Significant constraints; habitable floor levels elevated |
+| FPA2B | 5-10% annual chance | Moderate constraints; some elevation requirements |
+| FPA3 | 10-39% annual chance | Minor constraints; flooding likely but manageable |
+
+**Source:** Brisbane City Plan 2014, Flood Overlay Code
+
+**Methodology:**
+Flood planning areas are spatially joined to PTAL grid cells. A cell is flagged as flood-constrained if any portion intersects with FPA1, FPA2A, FPA2B, or FPA3.
+
+**Interpretation:**
+Flood constraints don't eliminate development potential, but they add cost and reduce feasibility:
+- Elevated habitable floors increase construction costs
+- Basement parking becomes impractical in flood-prone areas
+- Some sites may be excluded from insurance markets
+
+The overlay shows where Brisbane's best-serviced locations face competing planning constraints. This is relevant for two reasons:
+
+1. **Policy sequencing:** Areas with excellent transit but significant flood risk may need infrastructure investment (flood mitigation, elevated access) before density targets are realistic
+
+2. **Relative prioritisation:** Where PTAL 4A/4B locations have minimal flood constraints, these should be prioritised for near-term densification over flood-affected sites requiring additional engineering
+
+The tool does not assess future flood risk under climate change scenarios, which may expand affected areas.
 
 ## Calculation process
 
@@ -200,11 +270,16 @@ Total Effective Capacity = 104.3 units → PTAL 4
 ```
 ## Data sources
 
-- **GTFS schedule data:** TransLink South East Queensland, current timetables
-- **Vehicle capacity specifications:** Published by TransLink and rolling stock manufacturers
-- **On-time performance:** TransLink quarterly network performance reports (2023-2024)
-- **Walking network:** OpenStreetMap pedestrian network, extracted January 2025
-- **Grid geometry:** 100m × 100m cells within 5km of Brisbane CBD
+- **GTFS schedule data:** TransLink South East Queensland, current timetables (January 2026)
+- **Vehicle capacity specifications:** Published by TransLink and manufacturers
+- **On-time performance:** TransLink monthly punctuality and reliability performance reports (2023-2025)
+- **Street network:** OpenStreetMap network, extracted January 2026
+- **Parking rates:** Brisbane City Plan 2014, Transport, Access, Parking and Servicing Code; Victorian Government Activity Centre Zone Schedule 2024
+- **Flood planning areas:** Brisbane City Plan 2014, Flood Overlay mapping (Council GIS data)
+- **Zoning and height limits:** Brisbane City Plan 2014, Zone Code overlays
+- **Grid geometry:** 100m × 100m cells within 10km radius of Roma Street Station (lat -27.4652, lon 153.0191)
+
+All data sources are publicly available or derived from open government data.
 
 All data sources are publicly available.
 
@@ -234,7 +309,19 @@ All data sources are publicly available.
 
 8. **Weather and seasonal variation:** Analysis doesn't account for Brisbane's climate impacts on walking distances (heat, humidity, afternoon storms) or ferry service weather cancellations.
 
-9. **5km radius constraint:** Current analysis limited to inner Brisbane. Outer areas not yet assessed.
+9. **10km radius constraint:** Current analysis limited to inner Brisbane. Outer areas not yet assessed.
+
+10. **Parking analysis limitations:**
+    - Analysis assumes standard dwelling mix (predominantly 2-bed units) for comparison purposes
+    - Does not account for unbundled parking (where parking spaces are sold separately from units)
+    - Market demand for parking may differ from minimum requirements in specific locations
+    - Does not assess on-street parking availability or residential parking permit schemes
+
+11. **Flood overlay limitations:**
+    - Uses current flood mapping; does not incorporate climate change projections
+    - Binary classification (flood-affected or not) doesn't capture severity gradient
+    - Does not assess flood mitigation measures (levees, pump stations, elevated access) that may reduce practical impact
+    - Some flood-affected sites may still be developable with appropriate engineering; overlay flags constraint, not prohibition
 
 **Assumptions requiring validation:**
 
@@ -254,16 +341,44 @@ All data sources are publicly available.
 - Melbourne PTAL (used for Planning Scheme Amendment C309) uses 800m rail catchments
 - This methodology's thresholds and definitions aim for consistency with Australian TOD policy settings
 
+## Map overlay system
+
+The tool provides three optional overlays that can be toggled independently:
+
+**Height mismatch (red borders):**
+- Shows PTAL 4A/4B cells where current maximum heights are below recommended minimums
+- PTAL 4B cells with <30 storeys maximum
+- PTAL 4A cells with <16 storeys maximum
+- Indicates locations where planning rules prevent density despite excellent transit
+
+**Parking mismatch (orange diagonal hatch):**
+- Shows PTAL 3+ cells where parking requirements exceed recommended rates
+- Excludes City Core (already at appropriate rates)
+- Indicates where excessive parking requirements inflate housing costs despite good transit access
+
+**Flood constraints (blue diagonal hatch):**
+- Shows cells intersecting with any Flood Planning Area (FPA1, FPA2A, FPA2B, FPA3)
+- Indicates where flood risk adds development complexity
+- Does not mean development is impossible, but flags additional constraints
+
+**Transit gaps (purple borders):**
+- Shows PTAL 1 cells zoned for high-density residential
+- Indicates car-dependent high-density zoning that generates traffic congestion
+- Flags locations where transit should be upgraded or zoning reduced
+
+Overlays can be combined to identify compound constraints (e.g., high-PTAL locations with both height restrictions and flood planning areas).
+
 ## Future development
 
 Potential refinements under consideration:
 
 - **Address-level analysis:** Replace grid with cadastral parcels for planning application relevance
-- **Expanded coverage:** Extend beyond 5km radius to cover Greater Brisbane
+- **Expanded coverage:** Extend beyond 10km radius to cover Greater Brisbane
 - **Off-peak analysis:** Separate PTAL scores for interpeak, evening, and weekend service
 - **Destination-based assessment:** Weight services by employment/education accessibility
 - **Crowding adjustments:** Incorporate passenger load data where available
 - **Scenario testing:** Model accessibility impacts of proposed infrastructure (e.g., Brisbane Metro, CRR)
+- **Active transport:** Overlay accessibility of active transport corridors
 
 ## Technical implementation
 
@@ -275,20 +390,23 @@ Potential refinements under consideration:
 ## Attribution and contact
 
 This analysis was developed by a Brisbane-based urban planning analyst as an independent research project.
-
-## Feedback
-
 The methodology is offered for public use and critique. Corrections, suggestions, and data quality feedback are welcomed.
+For methodology questions, data corrections, or collaboration inquiries: #nospam brisbaneptal at gmail dot com with subject line 'PTAL Explorer'
 
 ## Acknowledgements
 
 - Transport for London for original PTAL methodology development
 - TransLink Queensland for open GTFS data
-- OpenStreetMap contributors for pedestrian network data
+- OpenStreetMap contributors for street network data
 
 ---
 
 ## Version history
+- v0.2 (January 2026): 
+  - Expanded coverage to 10km radius
+  - Added parking rate analysis and recommendations
+  - Added flood planning area overlays
+  - Refined PTAL 4A/4B threshold (added capacity-based split)
 - v0.1 (January 2026): Initial methodology documentation
 
 ## Licence 
