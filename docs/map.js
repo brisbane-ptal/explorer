@@ -410,27 +410,30 @@ function showInfo(e) {
   const gridId = props.id || "Unknown";
   const capacity = props.total_capacity;
   
-  // Extract row and col from internal format for URL
+  // Extract row and col from internal format
   const gridMatch = gridId.match(/r([+-])(\d+)_c([+-])(\d+)/);
   let displayId = gridId;
   let urlId = gridId;
   
   if (gridMatch) {
-    const rowSign = gridMatch[1];
+    const rowSign = gridMatch[1];       // + or -
     const rowValue = parseInt(gridMatch[2]);
-    const colSign = gridMatch[3];
-    const col = parseInt(gridMatch[4]);
+    const colSign = gridMatch[3];       // + or -
+    const colValue = parseInt(gridMatch[4]);
     
-    // Display format: D+15 style
+    // Convert to signed integers for URL
+    const row = rowSign === '+' ? rowValue : -rowValue;
+    const col = colSign === '+' ? colValue : -colValue;  // FIX: Handle negative columns
+    
+    // URL format: simple row,col
+    urlId = `${row},${col}`;
+    
+    // Display format: Letter (uppercase=north, lowercase=south) + sign + number
     const letterCode = 65 + rowValue;
     const letter = rowSign === '+' 
       ? String.fromCharCode(letterCode)
       : String.fromCharCode(letterCode).toLowerCase();
-    displayId = `${letter}${colSign}${col}`;
-    
-    // URL format: simple row,col
-    const row = rowSign === '+' ? rowValue : -rowValue;
-    urlId = `${row},${col}`;
+    displayId = `${letter}${colSign}${colValue}`;  // FIX: Use colValue not col
   }
   
   // Remove previous highlight
@@ -450,11 +453,11 @@ function showInfo(e) {
   setText("ptal-score", `${band} · ${capacity ? Math.round(capacity) : '0'} units/hr`);
   setText("category-label", getPTALLabel(ptal, total_capacity));
   
-  // Set grid link - display D+15 style, link to row,col format
+  // Set grid link - display and URL now match
   const gridLink = $("grid-id-link");
   if (gridLink) {
-    setText("grid-id-link", displayId);
-    gridLink.href = `?cell=${urlId}`; // Simple: ?cell=3,15
+    setText("grid-id-link", displayId);  // Shows: d-13
+    gridLink.href = `?cell=${urlId}`;    // Links to: ?cell=-3,-13
   }
   
   setText("zone-code", props.Zone_code || "Unknown");
