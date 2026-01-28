@@ -1,8 +1,8 @@
 /* =========================================================
-   Brisbane PTAL Explorer — map.js (updated v0.8)
+   Brisbane PTAL Explorer — map.js (updated v0.8.2)
    ========================================================= */
 
-const APP_VERSION = "v0.8.1";  // ← Increment this after running pipeline
+const APP_VERSION = "v0.8.2";  // ← Increment this after running pipeline
 const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
 
 // Current (localhost):
@@ -410,31 +410,35 @@ function showInfo(e) {
   const gridId = props.id || "Unknown";
   const capacity = props.total_capacity;
   
-  // Format grid ID - preserve case for north/south distinction
+  // Extract row and col from internal format for URL
   const gridMatch = gridId.match(/r([+-])(\d+)_c([+-])(\d+)/);
-let displayId = gridId;
-
-if (gridMatch) {
-  const rowSign = gridMatch[1];    // + or -
-  const rowValue = parseInt(gridMatch[2]);
-  const colSign = gridMatch[3];    // + or -
-  const col = parseInt(gridMatch[4]);
+  let displayId = gridId;
+  let urlId = gridId;
   
-  const letterCode = 65 + rowValue;
-  const letter = rowSign === '+' 
-    ? String.fromCharCode(letterCode)
-    : String.fromCharCode(letterCode).toLowerCase();
-  
-  // Show column with sign for clarity
-  displayId = `${letter}${colSign}${col}`;
-}
+  if (gridMatch) {
+    const rowSign = gridMatch[1];
+    const rowValue = parseInt(gridMatch[2]);
+    const colSign = gridMatch[3];
+    const col = parseInt(gridMatch[4]);
+    
+    // Display format: D+15 style
+    const letterCode = 65 + rowValue;
+    const letter = rowSign === '+' 
+      ? String.fromCharCode(letterCode)
+      : String.fromCharCode(letterCode).toLowerCase();
+    displayId = `${letter}${colSign}${col}`;
+    
+    // URL format: simple row,col
+    const row = rowSign === '+' ? rowValue : -rowValue;
+    urlId = `${row},${col}`;
+  }
   
   // Remove previous highlight
   if (currentHighlightedLayer && ptalLayer) {
     ptalLayer.resetStyle(currentHighlightedLayer);
   }
   
-  // Apply persistent black highlight to current cell
+  // Apply persistent black highlight
   layer.setStyle({
     weight: 3,
     color: '#000000',
@@ -446,11 +450,11 @@ if (gridMatch) {
   setText("ptal-score", `${band} · ${capacity ? Math.round(capacity) : '0'} units/hr`);
   setText("category-label", getPTALLabel(ptal, total_capacity));
   
-  // Set grid link with HUMAN-READABLE ID
+  // Set grid link - display D+15 style, link to row,col format
   const gridLink = $("grid-id-link");
   if (gridLink) {
     setText("grid-id-link", displayId);
-    gridLink.href = `?cell=${encodeURIComponent(displayId)}`; // Encode + as %2B
+    gridLink.href = `?cell=${urlId}`; // Simple: ?cell=3,15
   }
   
   setText("zone-code", props.Zone_code || "Unknown");
@@ -555,55 +559,6 @@ if (gridMatch) {
   }
 }
 
-function addPTALLayer(data) {
-  if (ptalLayer) {
-    try { ptalLayer.remove(); } catch (_) {}
-    ptalLayer = null;
-  }
-
-  ptalData = data;
-  ptalLayer = L.geoJSON(data, { style, onEachFeature }).addTo(map);
-
-  // CRITICAL: Create patterns AFTER layer is added
-  createSVGPatterns();
-
-  try { map.fitBounds(ptalLayer.getBounds()); } catch (_) {}
-}
-
-async function loadPTAL() {
-  let data = null;
-
-  try {
-    const resGz = await fetch(PTAL_GZ_URL, { cache: "no-store" });
-    if (resGz.ok) {
-      const buffer = await resGz.arrayBuffer();
-      const decompressed = pako.ungzip(new Uint8Array(buffer), { to: "string" });
-      data = JSON.parse(decompressed);
-      console.log("PTAL features (gz):", data?.features?.length ?? 0);
-    } else {
-      console.warn("PTAL gz fetch not ok:", resGz.status);
-    }
-  } catch (err) {
-    console.warn("PTAL gz load failed, falling back to JSON:", err);
-  }
-
-  if (!data) {
-    try {
-      const resJson = await fetch(PTAL_JSON_URL, { cache: "no-store" });
-      if (resJson.ok) {
-        data = await resJson.json();
-        console.log("PTAL features (json):", data?.features?.length ?? 0);
-      } else {
-        console.error("PTAL json fetch not ok:", resJson.status);
-      }
-    } catch (err) {
-      console.error("Failed to load PTAL entirely:", err);
-    }
-  }
-
-  if (data) addPTALLayer(data);
-}
-
 // Handle URL parameters to open specific cells
 function openCellFromURL() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -614,44 +569,36 @@ function openCellFromURL() {
     return;
   }
   
-  console.log(`Looking for cell: ${cellId}`); // FIXED
+  console.log(`Looking for cell: ${cellId}`);
   
-  // Convert human-readable format (D+15, d-15) to internal
-  if (/^[A-Za-z][+-]\d+$/.test(cellId)) {
-    const letter = cellId.charAt(0);
-    const colSign = cellId.charAt(1);      // + or -
-    const number = parseInt(cellId.slice(2));
-  
-    const isUpperCase = letter === letter.toUpperCase();
-    const rowValue = letter.toUpperCase().charCodeAt(0) - 65;
-    const rowSign = isUpperCase ? '+' : '-';
-  
-    cellId = `r${rowSign}${String(rowValue).padStart(3, '0')}_c${colSign}${String(number).padStart(3, '0')}`;
-    console.log(`Converted to internal format: ${cellId}`); // FIXED (also removed slice)
+  // Convert row,col format (3,15 or -3,15) to internal format
+  if (/^-?\d+,-?\d+$/.test(cellId)) {
+    const [rowStr, colStr] = cellId.split(',');
+    const row = parseInt(rowStr);
+    const col = parseInt(colStr);
+    
+    const rowSign = row >= 0 ? '+' : '-';
+    const colSign = col >= 0 ? '+' : '-';
+    const rowValue = Math.abs(row);
+    const colValue = Math.abs(col);
+    
+    cellId = `r${rowSign}${String(rowValue).padStart(3, '0')}_c${colSign}${String(colValue).padStart(3, '0')}`;
+    console.log(`Converted ${rowStr},${colStr} to: ${cellId}`);
   }
   
-  // Find the feature with matching ID
+  // Find and display the cell
   const feature = ptalData.features.find(f => f.properties.id === cellId);
   
   if (!feature) {
-    console.warn(`Cell ${cellId} not found in data`); // FIXED
+    console.warn(`Cell ${cellId} not found`);
     return;
   }
   
-  console.log(`Found feature for ${cellId}`); // FIXED
-  
-  // Get the Leaflet layer for this feature
-  let found = false;
   ptalLayer.eachLayer(layer => {
     if (layer.feature?.properties?.id === cellId) {
-      found = true;
-      console.log(`Found Leaflet layer for ${cellId}`); // FIXED
-      
-      // Zoom to cell
       const bounds = layer.getBounds();
       map.fitBounds(bounds, { padding: [100, 100], maxZoom: 16 });
       
-      // Apply persistent black highlight
       layer.setStyle({
         weight: 3,
         color: '#000000',
@@ -659,16 +606,11 @@ function openCellFromURL() {
       });
       currentHighlightedLayer = layer;
       
-      // Open info panel after a brief delay
       setTimeout(() => {
         showInfo({ target: layer });
       }, 500);
     }
   });
-  
-  if (!found) {
-    console.warn(`Layer not found for ${cellId}`); // FIXED
-  }
 }
 
 // Call after data loads
