@@ -16,7 +16,7 @@
    5. [Mode-specific catchments with distance decay](#5-mode-specific-catchments-with-distance-decay)  
    6. [PTAL band thresholds](#6-ptal-band-thresholds)
    7. [Parking rate analysis](#7-parking-rate-analysis)
-   8. [Flood planning area overlays](#8-flood-planning-area overlays)
+   8. [Flood planning area overlays](#8-flood-planning-area-overlays)
 4. [Calculation process](#calculation-process)  
 5. [Data sources](#data-sources)  
 6. [Limitations and assumptions](#limitations-and-assumptions)  
