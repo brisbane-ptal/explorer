@@ -450,7 +450,7 @@ if (gridMatch) {
   const gridLink = $("grid-id-link");
   if (gridLink) {
     setText("grid-id-link", displayId);
-    gridLink.href = `?cell=${displayId}`; // Use H8 format, not r+008_c+004
+    gridLink.href = `?cell=${encodeURIComponent(displayId)}`; // Encode + as %2B
   }
   
   setText("zone-code", props.Zone_code || "Unknown");
