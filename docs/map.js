@@ -411,22 +411,23 @@ function showInfo(e) {
   const capacity = props.total_capacity;
   
   // Format grid ID - preserve case for north/south distinction
-  const gridMatch = gridId.match(/r([+-])(\d+)_c\+(\d+)/);
-  let displayId = gridId;
+  const gridMatch = gridId.match(/r([+-])(\d+)_c([+-])(\d+)/);
+let displayId = gridId;
+
+if (gridMatch) {
+  const rowSign = gridMatch[1];    // + or -
+  const rowValue = parseInt(gridMatch[2]);
+  const colSign = gridMatch[3];    // + or -
+  const col = parseInt(gridMatch[4]);
   
-  if (gridMatch) {
-    const rowSign = gridMatch[1]; // '+' or '-'
-    const rowValue = parseInt(gridMatch[2]);
-    const col = parseInt(gridMatch[3]);
-    
-    // Positive rows = uppercase (north), negative rows = lowercase (south)
-    const letterCode = 65 + rowValue; // A=65
-    const letter = rowSign === '+' 
-      ? String.fromCharCode(letterCode)      // Uppercase for positive
-      : String.fromCharCode(letterCode).toLowerCase(); // Lowercase for negative
-    
-    displayId = `${letter}${col}`;
-  }
+  const letterCode = 65 + rowValue;
+  const letter = rowSign === '+' 
+    ? String.fromCharCode(letterCode)
+    : String.fromCharCode(letterCode).toLowerCase();
+  
+  // Show column with sign for clarity
+  displayId = `${letter}${colSign}${col}`;
+}
   
   // Remove previous highlight
   if (currentHighlightedLayer && ptalLayer) {
@@ -613,39 +614,38 @@ function openCellFromURL() {
     return;
   }
   
-  console.log(`Looking for cell: ${cellId}`);
+  console.log(`Looking for cell: ${cellId}`); // FIXED
   
-  // Convert human-readable format (H8 or h8) to internal format (r+008_c+004 or r-008_c+004)
-  if (/^[A-Za-z]\d+$/.test(cellId)) {
+  // Convert human-readable format (D+15, d-15) to internal
+  if (/^[A-Za-z][+-]\d+$/.test(cellId)) {
     const letter = cellId.charAt(0);
-    const number = parseInt(cellId.slice(1));
-    
-    // Uppercase = positive row (north), lowercase = negative row (south)
+    const colSign = cellId.charAt(1);      // + or -
+    const number = parseInt(cellId.slice(2));
+  
     const isUpperCase = letter === letter.toUpperCase();
     const rowValue = letter.toUpperCase().charCodeAt(0) - 65;
     const rowSign = isUpperCase ? '+' : '-';
-    
-    const col = number;
-    cellId = `r${rowSign}${String(rowValue).padStart(3, '0')}_c+${String(col).padStart(3, '0')}`;
-    console.log(`Converted ${letter}${number} to internal format: ${cellId}`);
+  
+    cellId = `r${rowSign}${String(rowValue).padStart(3, '0')}_c${colSign}${String(number).padStart(3, '0')}`;
+    console.log(`Converted to internal format: ${cellId}`); // FIXED (also removed slice)
   }
   
   // Find the feature with matching ID
   const feature = ptalData.features.find(f => f.properties.id === cellId);
   
   if (!feature) {
-    console.warn(`Cell ${cellId} not found in data`);
+    console.warn(`Cell ${cellId} not found in data`); // FIXED
     return;
   }
   
-  console.log(`Found feature for ${cellId}`);
+  console.log(`Found feature for ${cellId}`); // FIXED
   
   // Get the Leaflet layer for this feature
   let found = false;
   ptalLayer.eachLayer(layer => {
     if (layer.feature?.properties?.id === cellId) {
       found = true;
-      console.log(`Found Leaflet layer for ${cellId}`);
+      console.log(`Found Leaflet layer for ${cellId}`); // FIXED
       
       // Zoom to cell
       const bounds = layer.getBounds();
@@ -667,7 +667,7 @@ function openCellFromURL() {
   });
   
   if (!found) {
-    console.warn(`Layer not found for ${cellId}`);
+    console.warn(`Layer not found for ${cellId}`); // FIXED
   }
 }
 
