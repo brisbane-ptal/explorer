@@ -378,7 +378,7 @@ function onEachFeature(feature, layer) {
     const label = getPTALLabel(ptal, total_capacity);
     layer.bindTooltip(
       `PTAL ${band} (${label})<br>Click for details`,
-      { sticky: true, opacity: 0.9 }
+      { sticky: false, opacity: 0.9, direction: 'top', className: 'ptal-tip' }
     );
   }
 }
