@@ -1,8 +1,8 @@
 /* =========================================================
-   Brisbane PTAL Explorer — map.js (updated v0.8.2)
+   Brisbane PTAL Explorer — map.js (updated v0.8.3)
    ========================================================= */
 
-const APP_VERSION = "v0.8.2";  // ← Increment this after running pipeline
+const APP_VERSION = "v0.8.3";  // ← Increment this after running pipeline
 const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
 
 // Embed mode switch
