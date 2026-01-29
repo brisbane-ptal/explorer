@@ -5,6 +5,16 @@
 const APP_VERSION = "v0.8.2";  // ← Increment this after running pipeline
 const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
 
+// Embed mode switch
+const urlParams = new URLSearchParams(window.location.search);
+const IS_EMBED = urlParams.get('embed') === '1';
+
+// Apply a CSS hook for embed mode as early as possible
+if (IS_EMBED) {
+  document.documentElement.classList.add('embed');
+}
+
+
 // Current (localhost):
 //const PTAL_GZ_URL = `brisbane_ptal_final.geojson.gz`;
 //const PTAL_JSON_URL = `brisbane_ptal_final.geojson`;
@@ -640,6 +650,21 @@ const legend = $("legend");
 const burger = $("legend-burger");
 const legendToggle = $("legend-toggle");
 const legendContent = $("legend-content");
+
+
+
+/ Make legend compact in embed mode
+if (IS_EMBED && legend && legendContent) {
+  // Collapse content, keep the small header ("PTAL Score") visible
+  legendContent.style.display = "none";
+  legend.classList.add("collapsed");
+  if (legendToggle) {
+    // If the toggle button is visible on desktop, show a "+" to expand
+    legendToggle.style.display = "block";
+    legendToggle.textContent = "+";
+  }
+}
+
 
 if (burger && legend) {
   burger.addEventListener("click", (e) => {
