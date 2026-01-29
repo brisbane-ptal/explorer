@@ -185,7 +185,7 @@ The tool compares Brisbane City Council's current parking minimums against PTAL-
 | 2 (Moderate) | 1.5 | Basic service requires some car ownership. BCC's proposed rate for major interchanges |
 | 1 (Poor) | 2.25 | Car-dependent location. Higher than BCC general rate to reflect true accessibility constraint |
 
-**Comparison to Victorian Government PTAL reforms (December 2024):**
+**Comparison to Victorian Government PTAL reforms (December 2025):**
 - PTAL 3-4 areas (train/tram within 400m or <4km from CBD): 2 spaces maximum
 - PTAL 2 areas (serviced by public transport): 1 space minimum
 - PTAL 1 areas (little/no service): 1.2 spaces minimum
@@ -373,16 +373,25 @@ Overlays can be combined to identify compound constraints (e.g., high-PTAL locat
 
 ## Future development
 
-Potential refinements under consideration:
+These are the improvements I’m considering:
 
-- **Address-level analysis:** Replace grid with cadastral parcels for planning application relevance
+- **River crossing logic:** Support calculation of catchment areas enabled by pedestrian-accessible bridges
+
 - **Expanded coverage:** Extend beyond 10km radius to cover Greater Brisbane
+
 - **Off-peak analysis:** Separate PTAL scores for interpeak, evening, and weekend service
+
 - **Destination-based assessment:** Weight services by employment/education accessibility
+
 - **Crowding adjustments:** Incorporate passenger load data where available
+
 - **Scenario testing:** Model accessibility impacts of proposed infrastructure (e.g., Brisbane Metro, CRR)
+
 - **Active transport:** Overlay accessibility of active transport corridors
 
+- **Usability Enhancements:** Improve accessibility for vision impaired and colourblind users
+
+  
 ## Technical implementation
 
 - **Calculation:** Python 3.12 with geopandas, pandana/OSMnx for network analysis
