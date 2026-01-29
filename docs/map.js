@@ -52,7 +52,7 @@ async function loadPTAL() {
   }
 }
 
-const NOMINATIM_EMAIL = "";
+const NOMINATIM_EMAIL = "brisbaneptal@gmail.com";
 
 let ptalLayer = null;
 let ptalData = null;
