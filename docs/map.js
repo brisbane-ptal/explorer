@@ -16,46 +16,102 @@ const PTAL_JSON_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-
 async function loadPTAL() {
   let data = null;
 
-  // Try .gz first (preferred - much smaller)
+  // Try .gz first (preferred)
   try {
-    const resGz = await fetch(PTAL_GZ_URL, { 
-      cache: "default"  // Allow browser caching
-    });
-    
+    const resGz = await fetch(PTAL_GZ_URL, { cache: "default" });
+
     if (resGz.ok) {
       const buffer = await resGz.arrayBuffer();
       const decompressed = pako.ungzip(new Uint8Array(buffer), { to: "string" });
       data = JSON.parse(decompressed);
+
       console.log("✓ Loaded PTAL (gz):", data?.features?.length ?? 0, "features");
-      
+
+      // Keep full dataset (optional, but handy for debugging)
       fullData = data;
-      const innerCells = {
-        type: "FeatureCollection",
-        features: data.features.filter(f => {
-          const dist = f.properties.distance_from_center_km;
-          return dist !== undefined && dist !== null && dist <= 5;
+
+      const all = Array.isArray(data.features) ? data.features : [];
+
+      // 1) INNER NOW (<= 5km)
+      const inner = all.filter(f => {
+        const dist = f?.properties?.distance_from_center_km;
+        return dist !== undefined && dist !== null && dist <= 5;
+      });
+
+      // 2) OUTER LATER (> 5km), sorted closest-first
+      const outer = all
+        .filter(f => {
+          const dist = f?.properties?.distance_from_center_km;
+          return dist !== undefined && dist !== null && dist > 5;
         })
-      };
-      console.log(`✓ Showing inner 5km: ${innerCells.features.length} features`);
-      return addPTALLayer(innerCells);
+        .sort((a, b) => {
+          const da = a?.properties?.distance_from_center_km ?? 999;
+          const db = b?.properties?.distance_from_center_km ?? 999;
+          return da - db;
+        });
+
+      console.log(`✓ Inner 5km: ${inner.length} | Outer: ${outer.length}`);
+
+      // This is the live dataset we will append to
+      ptalData = { type: "FeatureCollection", features: inner };
+
+      // Add inner layer immediately
+      addPTALLayer(ptalData);
+
+      // Batch append outer after a short delay
+      const batchSize = 8000;   // tweak: 3000–12000 depending on device
+      let loaded = 0;
+
+      function loadNextBatch() {
+        if (loaded >= outer.length) {
+          console.log("✓ All outer cells loaded");
+          return;
+        }
+
+        const batch = outer.slice(loaded, loaded + batchSize);
+        ptalData.features.push(...batch);
+        loaded += batch.length;
+
+        console.log(`⏳ Loading outer batch: ${loaded}/${outer.length}`);
+
+        if (ptalLayer) {
+          // Re-add data; style() will re-run and respect current toggle flags
+          ptalLayer.clearLayers();
+          ptalLayer.addData(ptalData);
+
+          // Ensure patterns exist (defs can be lost on some browsers when re-rendering)
+          createSVGPatterns();
+
+          // If user has toggles set, keep the style consistent after the refresh
+          ptalLayer.setStyle(style);
+        }
+
+        // Yield to UI thread
+        setTimeout(loadNextBatch, 120);
+      }
+
+      // Delay so the initial map is interactive ASAP
+      setTimeout(loadNextBatch, 600);
+
+      return; // Exit early on success
+    }
   } catch (err) {
-    console.warn("⚠️  .gz failed, trying .json fallback:", err.message);
+    console.warn("⚠️  .gz failed, trying .json fallback:", err?.message || err);
   }
 
-  // Fallback to uncompressed .json only if .gz fails
+  // Fallback .json
   try {
-    const resJson = await fetch(PTAL_JSON_URL, { 
-      cache: "default" 
-    });
-    
+    const resJson = await fetch(PTAL_JSON_URL, { cache: "default" });
+
     if (resJson.ok) {
       data = await resJson.json();
       console.log("✓ Loaded PTAL (json):", data?.features?.length ?? 0, "features");
-      return addPTALLayer(data);
-    } else {
-      throw new Error(`HTTP ${resJson.status}`);
+      addPTALLayer(data);
+      return;
     }
-    } catch (err) {
+
+    throw new Error(`HTTP ${resJson.status}`);
+  } catch (err) {
     console.error("❌ Failed to load PTAL data:", err);
     alert("Failed to load map data. Please refresh the page.");
   }
