@@ -377,11 +377,10 @@ function style(feature) {
   const planningMismatch = hasPlanningMismatch(props);
   const transitGap = hasTransitGap(props);
   
-  // Hide green space, but KEEP flood-constrained cells visible when flood overlay is on
-  if (hideGreenSpace && isGreenSpace(props) && !(showFloodOverlay && flood)) {
-  return { fillOpacity: 0, opacity: 0, stroke: false };
+  // Hide if OS/CN/SR Zoning
+  if (hideGreenSpace && isGreenSpace(props)) {
+    return { fillOpacity: 0, opacity: 0, stroke: false };
   }
-   
   // Hide only if PTAL invalid AND not a flood constraint
   const ptalValid = Number.isFinite(ptalNum) && ptalNum > 0;
   if (!ptalValid && !flood) {
