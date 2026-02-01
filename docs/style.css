@@ -422,3 +422,34 @@ footer .disclaimer strong{
     display: none !important;
   }
 }
+
+/* ================================
+   Embed mode
+   ================================ */
+
+body.embed header,
+body.embed footer {
+  display: none !important;
+}
+
+/* Remove extra top spacing caused by header */
+body.embed {
+  padding-top: 0;
+}
+
+/* Lock map height for embeds */
+body.embed #map {
+  height: 650px;          /* matches iframe default */
+  max-height: 650px;
+}
+
+/* Optional: simplify UI chrome */
+body.embed #legend,
+body.embed #legend-burger {
+  display: none !important;
+}
+
+/* Info panel still allowed */
+body.embed #info-panel {
+  max-height: 90%;
+}
