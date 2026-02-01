@@ -6,12 +6,12 @@ const APP_VERSION = "v0.9";  // ← Increment this after running pipeline
 const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
 
 // Current (localhost):
-const PTAL_GZ_URL = `brisbane_ptal_final.geojson.gz`;
-const PTAL_JSON_URL = `brisbane_ptal_final.geojson`;
+//const PTAL_GZ_URL = `brisbane_ptal_final.geojson.gz`;
+//const PTAL_JSON_URL = `brisbane_ptal_final.geojson`;
 
 // Change to (production):
-//const PTAL_GZ_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz?v=${APP_VERSION}`;
-//const PTAL_JSON_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson?v=${APP_VERSION}`;
+const PTAL_GZ_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz?v=${APP_VERSION}`;
+const PTAL_JSON_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson?v=${APP_VERSION}`;
 
 async function loadPTAL() {
   let data = null;
@@ -55,7 +55,7 @@ async function loadPTAL() {
     } else {
       throw new Error(`HTTP ${resJson.status}`);
     }
-  } catch (err) {
+    } catch (err) {
     console.error("❌ Failed to load PTAL data:", err);
     alert("Failed to load map data. Please refresh the page.");
   }
