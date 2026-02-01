@@ -16,7 +16,6 @@ const PTAL_JSON_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-
 async function loadPTAL() {
   let data = null;
 
-  // Try .gz first (preferred)
   try {
     const resGz = await fetch(PTAL_GZ_URL, { cache: "default" });
 
@@ -27,22 +26,19 @@ async function loadPTAL() {
 
       console.log("✓ Loaded PTAL (gz):", data?.features?.length ?? 0, "features");
 
-      // Keep full dataset (optional, but handy for debugging)
       fullData = data;
 
       const all = Array.isArray(data.features) ? data.features : [];
 
-      // 1) INNER NOW (<= 5km)
       const inner = all.filter(f => {
         const dist = f?.properties?.distance_from_center_km;
-        return dist !== undefined && dist !== null && dist <= 5;
+        return dist != null && dist <= 5;
       });
 
-      // 2) OUTER LATER (> 5km), sorted closest-first
       const outer = all
         .filter(f => {
           const dist = f?.properties?.distance_from_center_km;
-          return dist !== undefined && dist !== null && dist > 5;
+          return dist != null && dist > 5;
         })
         .sort((a, b) => {
           const da = a?.properties?.distance_from_center_km ?? 999;
@@ -52,14 +48,10 @@ async function loadPTAL() {
 
       console.log(`✓ Inner 5km: ${inner.length} | Outer: ${outer.length}`);
 
-      // This is the live dataset we will append to
       ptalData = { type: "FeatureCollection", features: inner };
-
-      // Add inner layer immediately
       addPTALLayer(ptalData);
 
-      // Batch append outer after a short delay
-      const batchSize = 8000;   // tweak: 3000–12000 depending on device
+      const batchSize = 8000;
       let loaded = 0;
 
       function loadNextBatch() {
@@ -75,29 +67,25 @@ async function loadPTAL() {
         console.log(`⏳ Loading outer batch: ${loaded}/${outer.length}`);
 
         if (ptalLayer) {
-          // Re-add data; style() will re-run and respect current toggle flags
           ptalLayer.clearLayers();
           ptalLayer.addData(ptalData);
-
-          // Ensure patterns exist (defs can be lost on some browsers when re-rendering)
           createSVGPatterns();
-
-          // If user has toggles set, keep the style consistent after the refresh
           ptalLayer.setStyle(style);
         }
 
-        // Yield to UI thread
         setTimeout(loadNextBatch, 120);
       }
 
-      // Delay so the initial map is interactive ASAP
       setTimeout(loadNextBatch, 600);
-
-      return; // Exit early on success
+      return;
     }
+
   } catch (err) {
     console.warn("⚠️  .gz failed, trying .json fallback:", err?.message || err);
   }
+
+  // JSON fallback can stay below
+}
 
   // Fallback .json
   try {
