@@ -84,9 +84,6 @@ async function loadPTAL() {
     console.warn("⚠️  .gz failed, trying .json fallback:", err?.message || err);
   }
 
-  // JSON fallback can stay below
-}
-
   // Fallback .json
   try {
     const resJson = await fetch(PTAL_JSON_URL, { cache: "default" });
