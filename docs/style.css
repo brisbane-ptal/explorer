@@ -219,7 +219,7 @@ path.flood-ptal1 {
   line-height: 1.3;
 }
 
-#mismatch-toggle, #flood-toggle, #parking-toggle{
+#mismatch-toggle, #flood-toggle, #parking-toggle, #greenspace-toggle{
   transform: translateY(1px);
   cursor: pointer;
 }
@@ -420,98 +420,4 @@ footer .disclaimer strong{
   #legend-toggle{
     display: none !important;
   }
-}
-
-/* ==============================
-   Embed mode (triggered by ?embed=1)
-   ============================== */
-html.embed body {
-  /* Optional: slightly lighter bg around the map when header/footer are gone */
-  background: #fafafa;
-}
-
-/* Hide chrome in embed */
-html.embed header,
-html.embed footer {
-  display: none !important;
-}
-
-/* Hide header controls (search + burger) for a clean graphic */
-html.embed .header-controls,
-html.embed #legend-burger {
-  display: none !important;
-}
-
-/* Keep the desktop-style side panels even on small widths */
-@media (max-width: 768px) {
-  html.embed #info-panel {
-    position: absolute !important;
-    top: 12px !important;
-    left: 12px !important;
-    right: auto !important;
-    bottom: auto !important;
-    width: 320px !important;
-    max-height: calc(100vh - 40px) !important;
-    transform: none !important;
-    z-index: var(--z-panel);
-  }
-  html.embed #legend {
-    position: absolute !important;
-    top: 12px !important;
-    right: 12px !important;
-    left: auto !important;
-    width: 280px !important;
-    max-height: calc(100vh - 40px) !important;
-    transform: none !important;
-    z-index: var(--z-panel);
-  }
-}
-
-/* Desktop positions tightened for embeds too */
-html.embed #info-panel {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  width: 320px;
-  max-height: calc(100vh - 40px);
-}
-
-html.embed #legend {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 280px;
-  max-height: calc(100vh - 40px);
-  padding: 12px;
-}
-
-/* Map height: predictable inside CMS pages
-   (Editors can still set iframe height; this prevents 100vh quirks inside the iframe) */
-html.embed #map {
-  height: 620px; /* Adjust if you want taller/shorter */
-}
-
-/* Optional: smaller type for a tighter card-like look */
-html.embed #legend h3,
-html.embed #legend h4 {
-  margin: 6px 0;
-}
-
-html.embed .legend-row {
-  margin: 4px 0;
-  font-size: 0.9rem;
-}
-
-/* Tooltips shouldn't capture the mouse */
-.leaflet-tooltip,
-.leaflet-tooltip.ptal-tip {
-  pointer-events: none;      /* prevents re-entrancy / ghosting */
-  transition: opacity .08s;  /* snappier fade reduces trails */
-}
-
-/* Optional: slightly smaller tooltip for dense grids */
-.leaflet-tooltip.ptal-tip {
-  font-size: 12px;
-  line-height: 1.2;
-  padding: 4px 6px;
 }

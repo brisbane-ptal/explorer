@@ -1,27 +1,17 @@
 /* =========================================================
-   Brisbane PTAL Explorer — map.js (updated v0.8.3)
+   Brisbane PTAL Explorer — map.js (v0.9)
    ========================================================= */
 
-const APP_VERSION = "v0.8.3";  // ← Increment this after running pipeline
+const APP_VERSION = "v0.9";  // ← Increment this after running pipeline
 const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
 
-// Embed mode switch
-const urlParams = new URLSearchParams(window.location.search);
-const IS_EMBED = urlParams.get('embed') === '1';
-
-// Apply a CSS hook for embed mode as early as possible
-if (IS_EMBED) {
-  document.documentElement.classList.add('embed');
-}
-
-
 // Current (localhost):
-//const PTAL_GZ_URL = `brisbane_ptal_final.geojson.gz`;
-//const PTAL_JSON_URL = `brisbane_ptal_final.geojson`;
+const PTAL_GZ_URL = `brisbane_ptal_final.geojson.gz`;
+const PTAL_JSON_URL = `brisbane_ptal_final.geojson`;
 
 // Change to (production):
-const PTAL_GZ_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz`;
-const PTAL_JSON_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson`;
+//const PTAL_GZ_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz?v=${APP_VERSION}`;
+//const PTAL_JSON_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson?v=${APP_VERSION}`;
 
 async function loadPTAL() {
   let data = null;
@@ -37,7 +27,53 @@ async function loadPTAL() {
       const decompressed = pako.ungzip(new Uint8Array(buffer), { to: "string" });
       data = JSON.parse(decompressed);
       console.log("✓ Loaded PTAL (gz):", data?.features?.length ?? 0, "features");
-      return addPTALLayer(data);  // Exit early on success
+      
+      fullData = data;
+      const innerCells = data.features.filter(f => {
+        const dist = f.properties.distance_from_center_km;
+        return dist !== undefined && dist !== null && dist <= 5;
+      });
+      const outerCells = data.features
+        .filter(f => {
+          const dist = f.properties.distance_from_center_km;
+          return dist !== undefined && dist !== null && dist > 5;
+        })
+        .sort((a, b) => {
+          const distA = a.properties.distance_from_center_km || 999;
+          const distB = b.properties.distance_from_center_km || 999;
+          return distA - distB;
+        });
+      
+      console.log(`✓ Inner 5km: ${innerCells.length} | Outer: ${outerCells.length}`);
+      
+      ptalData = { type: "FeatureCollection", features: innerCells };
+      addPTALLayer(ptalData);
+      
+      const batchSize = 10000;
+      let loaded = 0;
+      
+      function loadNextBatch() {
+        if (loaded >= outerCells.length) {
+          console.log("✓ All cells loaded");
+          return;
+        }
+        
+        const batch = outerCells.slice(loaded, loaded + batchSize);
+        ptalData.features.push(...batch);
+        loaded += batch.length;
+        
+        console.log(`Loading batch: ${loaded}/${outerCells.length}`);
+        
+        if (ptalLayer) {
+          ptalLayer.clearLayers();
+          ptalLayer.addData(ptalData);
+        }
+        
+        setTimeout(loadNextBatch, 100);
+      }
+      
+      setTimeout(loadNextBatch, 500);
+      return;  // Exit early on success
     }
   } catch (err) {
     console.warn("⚠️  .gz failed, trying .json fallback:", err.message);
@@ -62,16 +98,19 @@ async function loadPTAL() {
   }
 }
 
-const NOMINATIM_EMAIL = "brisbaneptal@gmail.com";
+const NOMINATIM_EMAIL = "";
 
 let ptalLayer = null;
 let ptalData = null;
+let fullData = null;
+let innerDataLoaded = false;
 let showMismatchesOnly = false;
 let showFloodOverlay = false;
 let showParkingOverlay = false;
+let hideGreenSpace = false;
 let searchMarker = null;
 
-const map = L.map("map").setView([-27.4705, 153.0260], 12);
+const map = L.map("map").setView([-27.4650, 153.0242], 15);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap contributors",
@@ -112,10 +151,34 @@ function createSVGPatterns() {
   
   console.log('Creating SVG patterns...');
   const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-  
-  // Create 15 patterns: 5 PTAL levels × 3 overlay states
-  Object.entries(PTAL_COLORS).forEach(([band, color]) => {
     
+  // 0. Flood-only clear pattern (for PTAL-null flood cells)
+    const floodClear = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+    floodClear.setAttribute('id', 'flood-clear');
+    floodClear.setAttribute('patternUnits', 'userSpaceOnUse');
+    floodClear.setAttribute('width', '10');
+    floodClear.setAttribute('height', '10');
+
+    const clearRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    clearRect.setAttribute('width', '10');
+    clearRect.setAttribute('height', '10');
+    clearRect.setAttribute('fill', 'rgba(255,255,255,0.05)'); // basically clear
+
+    const clearLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    clearLine.setAttribute('x1', '0');
+    clearLine.setAttribute('y1', '10');
+    clearLine.setAttribute('x2', '10');
+    clearLine.setAttribute('y2', '0');
+    clearLine.setAttribute('stroke', 'rgba(0, 80, 150, 0.8)');
+    clearLine.setAttribute('stroke-width', '3');
+
+    floodClear.appendChild(clearRect);
+    floodClear.appendChild(clearLine);
+    defs.appendChild(floodClear);
+
+  // Create 15 patterns: 5 PTAL levels × 3 overlay states
+  Object.entries(PTAL_COLORS).forEach(([band, color]) => {  
+  
     // 1. Flood only (blue diagonal)
     const floodPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
     floodPattern.setAttribute('id', `flood-ptal${band}`);
@@ -203,17 +266,25 @@ function createSVGPatterns() {
   return true;
 }
 
-function getPTALColor(ptal, peak_services) {
-  const band = getPTALBand(ptal, peak_services);
+function getPTALColor(ptal, total_capacity) {
+  const band = getPTALBand(ptal, total_capacity);
+  if (!band) return PTAL_COLORS["1"];
   return PTAL_COLORS[band.toLowerCase()] || "#cccccc";
 }
 
 function getPTALBand(ptal, total_capacity) {
-  if (ptal === 4) {
-    if (total_capacity >= 240) return "4B";
-    if (total_capacity >= 120) return "4A";
+  const p = Number(ptal);
+  if (!Number.isFinite(p) || p <= 0) return null;
+
+  const cap = Number(total_capacity);
+
+  if (p === 4) {
+    if (Number.isFinite(cap) && cap >= 240) return "4B";
+    if (Number.isFinite(cap) && cap >= 120) return "4A";
+    return "4";
   }
-  return ptal.toString();
+
+  return String(p);
 }
 
 function getPTALLabel(ptal, total_capacity) {
@@ -287,6 +358,11 @@ function hasTransitGap(props) {
   return ptal === 1 && props.transit_gap === true;
 }
 
+function isGreenSpace(props) {
+  const z = String(props.Zone_code || "").trim().toUpperCase();
+  return z === "CN" || z === "OS" || z === "SR";
+}
+
 function $(id) { return document.getElementById(id); }
 function setText(id, text) { const el = $(id); if (el) el.textContent = text ?? ""; }
 function setHTML(id, html) { const el = $(id); if (el) el.innerHTML = html ?? ""; }
@@ -294,26 +370,33 @@ function showEl(id, show) { const el = $(id); if (el) el.style.display = show ? 
 
 function style(feature) {
   const props = feature.properties || {};
-  const ptal = Number(props.ptal);
-  const total_capacity = Number(props.total_capacity);
-
-  if (!Number.isFinite(ptal)) return { fillOpacity: 0, opacity: 0, stroke: false };
-  
-  const planningMismatch = hasPlanningMismatch(props);
-  const transitGap = hasTransitGap(props);
+  const ptalNum = Number(props.ptal);
+  const capNum = Number(props.total_capacity);
   const flood = hasFloodConstraint(props);
   const parking = hasParkingMismatch(props);
-
+  const planningMismatch = hasPlanningMismatch(props);
+  const transitGap = hasTransitGap(props);
+  
+  // Hide if OS/CN/SR Zoning
+  if (hideGreenSpace && isGreenSpace(props)) {
+    return { fillOpacity: 0, opacity: 0, stroke: false };
+  }
+  // Hide only if PTAL invalid AND not a flood constraint
+  const ptalValid = Number.isFinite(ptalNum) && ptalNum > 0;
+  if (!ptalValid && !flood) {
+    return { fillOpacity: 0, opacity: 0, stroke: false };
+  }
+  const ptalNullFlood = !ptalValid && flood;
+  
   // When mismatch filter active, hide non-mismatch cells
   if (showMismatchesOnly && !planningMismatch && !transitGap) {
     return { fillOpacity: 0, opacity: 0, stroke: false };
   }
 
-  // Default: white border, weight 1
+  // Default border
   let borderColor = "white";
   let borderWeight = 1;
-  
-  // Planning mismatch cells ALWAYS get colored borders (regardless of toggle)
+
   if (planningMismatch) {
     borderColor = "#ff0000";
     borderWeight = 2;
@@ -322,20 +405,26 @@ function style(feature) {
     borderWeight = 2;
   }
 
-  const band = getPTALBand(ptal, total_capacity).toLowerCase();
+  // Band + safe fallbacks for PTAL-null flood cells
+  const bandStr = getPTALBand(ptalNum, capNum);
+  const bandKey = bandStr ? bandStr.toLowerCase() : "1";
+
+  // Base fill: safe even when PTAL null
+  let fillColor = ptalNullFlood
+  ? "rgba(255,255,255,0.05)"      // clear-ish base for PTAL-null flood cells
+  : ((bandStr && PTAL_COLORS[bandKey]) ? PTAL_COLORS[bandKey] : PTAL_COLORS["1"]);
   
-  let fillColor = getPTALColor(ptal, total_capacity);
-  
+  // Overlay patterns override base fill
   if (showFloodOverlay && flood && showParkingOverlay && parking) {
-    fillColor = `url(#flood-parking-ptal${band})`;
+    fillColor = `url(#flood-parking-ptal${bandKey})`;
   } else if (showFloodOverlay && flood) {
-    fillColor = `url(#flood-ptal${band})`;
+    fillColor = ptalNullFlood ? `url(#flood-clear)` : `url(#flood-ptal${bandKey})`;
   } else if (showParkingOverlay && parking) {
-    fillColor = `url(#parking-ptal${band})`;
+    fillColor = `url(#parking-ptal${bandKey})`;
   }
 
   return {
-    fillColor: fillColor,
+    fillColor,
     weight: borderWeight,
     color: borderColor,
     opacity: 0.8,
@@ -371,14 +460,21 @@ function onEachFeature(feature, layer) {
 
   const props = feature.properties || {};
   const ptal = Number(props.ptal);
+  const hasValidPTAL = Number.isFinite(ptal) && ptal > 0;
   const total_capacity = Number(props.total_capacity);
   const band = getPTALBand(ptal, total_capacity);
+  const flood = hasFloodConstraint(props); 
   
-  if (Number.isFinite(ptal)) {
+  if (hasValidPTAL) {
     const label = getPTALLabel(ptal, total_capacity);
     layer.bindTooltip(
       `PTAL ${band} (${label})<br>Click for details`,
-      { sticky: false, opacity: 0.9, direction: 'top', className: 'ptal-tip' }
+      { sticky: true, opacity: 0.9 }
+    );
+  } else if (flood) {
+    layer.bindTooltip(
+      `Flood constraint (${props.flood_constraint})<br>Click for details`,
+      { sticky: true, opacity: 0.9 }
     );
   }
 }
@@ -406,68 +502,46 @@ if (closeBtn) {
   });
 }
 
-let currentHighlightedLayer = null; // Track highlighted layer globally
-
 function showInfo(e) {
-  const layer = e.target;
-  const props = layer?.feature?.properties || {};
+  const props = e.target?.feature?.properties || {};
   const ptal = Number(props.ptal);
   const total_capacity = Number(props.total_capacity);
-  
-  if (!Number.isFinite(ptal)) return;
+
+  const flood = hasFloodConstraint(props);
+  const hasValidPTAL = Number.isFinite(ptal) && ptal > 0;
+
+  // Allow clicks on flood-only (PTAL null) cells so panel opens
+  if (!hasValidPTAL && !flood) return;
 
   const band = getPTALBand(ptal, total_capacity);
   const gridId = props.id || "Unknown";
   const capacity = props.total_capacity;
   
-  // Extract row and col from internal format
-  const gridMatch = gridId.match(/r([+-])(\d+)_c([+-])(\d+)/);
+  // Format grid ID
+  const gridMatch = gridId.match(/r([+-]?\d+)_c([+-]?\d+)/);
   let displayId = gridId;
-  let urlId = gridId;
   
   if (gridMatch) {
-    const rowSign = gridMatch[1];       // + or -
-    const rowValue = parseInt(gridMatch[2]);
-    const colSign = gridMatch[3];       // + or -
-    const colValue = parseInt(gridMatch[4]);
-    
-    // Convert to signed integers for URL
-    const row = rowSign === '+' ? rowValue : -rowValue;
-    const col = colSign === '+' ? colValue : -colValue;  // FIX: Handle negative columns
-    
-    // URL format: simple row,col
-    urlId = `${row},${col}`;
-    
-    // Display format: Letter (uppercase=north, lowercase=south) + sign + number
-    const letterCode = 65 + rowValue;
-    const letter = rowSign === '+' 
-      ? String.fromCharCode(letterCode)
-      : String.fromCharCode(letterCode).toLowerCase();
-    displayId = `${letter}${colSign}${colValue}`;  // FIX: Use colValue not col
+    const row = parseInt(gridMatch[1]);
+    const col = parseInt(gridMatch[2]);
+    const letter = String.fromCharCode(65 + Math.abs(row));
+    const number = Math.abs(col);
+    displayId = `${letter}${number}`;
   }
-  
-  // Remove previous highlight
-  if (currentHighlightedLayer && ptalLayer) {
-    ptalLayer.resetStyle(currentHighlightedLayer);
-  }
-  
-  // Apply persistent black highlight
-  layer.setStyle({
-    weight: 3,
-    color: '#000000',
-    fillOpacity: 0.8
-  });
-  currentHighlightedLayer = layer;
   
   // Set PTAL with capacity
-  setText("ptal-score", `${band} · ${capacity ? Math.round(capacity) : '0'} units/hr`);
-  setText("category-label", getPTALLabel(ptal, total_capacity));
-  
-  // Set grid link - display and URL now match
+  if (hasValidPTAL) {
+    setText("ptal-score", `${band} · ${capacity ? Math.round(capacity) : '0'} units/hr`);
+    setText("category-label", getPTALLabel(ptal, total_capacity));
+  } else {
+    setText("ptal-score", "not assessed - River / Creek");
+    setText("category-label", "Flood constrained area");
+  }
+  // Set grid link
   const gridLink = $("grid-id-link");
   if (gridLink) {
-    setText("grid-id-link", displayId);  // Shows: d-13
-    gridLink.href = `?cell=${urlId}`;    // Links to: ?cell=-3,-13
+    setText("grid-id-link", displayId);
+    gridLink.href = `?cell=${gridId}`;
   }
   
   setText("zone-code", props.Zone_code || "Unknown");
@@ -506,9 +580,9 @@ function showInfo(e) {
   
   const planningMismatch = hasPlanningMismatch(props);
   const transitGap = hasTransitGap(props);
-  const flood = hasFloodConstraint(props);
   const parking = hasParkingMismatch(props);
   
+  showEl("planning-controls", !(props.flood_constraint === "FPA1"));
   showEl("planning-mismatch-warning", planningMismatch);
   showEl("transit-gap-warning", transitGap);
   showEl("flood-explainer", flood);
@@ -572,61 +646,6 @@ function showInfo(e) {
   }
 }
 
-// Handle URL parameters to open specific cells
-function openCellFromURL() {
-  const urlParams = new URLSearchParams(window.location.search);
-  let cellId = urlParams.get('cell');
-  
-  if (!cellId || !ptalData || !ptalLayer) {
-    console.log('URL cell check: no cellId, data, or layer yet');
-    return;
-  }
-  
-  console.log(`Looking for cell: ${cellId}`);
-  
-  // Convert row,col format (3,15 or -3,15) to internal format
-  if (/^-?\d+,-?\d+$/.test(cellId)) {
-    const [rowStr, colStr] = cellId.split(',');
-    const row = parseInt(rowStr);
-    const col = parseInt(colStr);
-    
-    const rowSign = row >= 0 ? '+' : '-';
-    const colSign = col >= 0 ? '+' : '-';
-    const rowValue = Math.abs(row);
-    const colValue = Math.abs(col);
-    
-    cellId = `r${rowSign}${String(rowValue).padStart(3, '0')}_c${colSign}${String(colValue).padStart(3, '0')}`;
-    console.log(`Converted ${rowStr},${colStr} to: ${cellId}`);
-  }
-  
-  // Find and display the cell
-  const feature = ptalData.features.find(f => f.properties.id === cellId);
-  
-  if (!feature) {
-    console.warn(`Cell ${cellId} not found`);
-    return;
-  }
-  
-  ptalLayer.eachLayer(layer => {
-    if (layer.feature?.properties?.id === cellId) {
-      const bounds = layer.getBounds();
-      map.fitBounds(bounds, { padding: [100, 100], maxZoom: 16 });
-      
-      layer.setStyle({
-        weight: 3,
-        color: '#000000',
-        fillOpacity: 0.8
-      });
-      currentHighlightedLayer = layer;
-      
-      setTimeout(() => {
-        showInfo({ target: layer });
-      }, 500);
-    }
-  });
-}
-
-// Call after data loads
 function addPTALLayer(data) {
   if (ptalLayer) {
     try { ptalLayer.remove(); } catch (_) {}
@@ -636,35 +655,16 @@ function addPTALLayer(data) {
   ptalData = data;
   ptalLayer = L.geoJSON(data, { style, onEachFeature }).addTo(map);
 
+  // CRITICAL: Create patterns AFTER layer is added
   createSVGPatterns();
 
-  try { map.fitBounds(ptalLayer.getBounds()); } catch (_) {}
-  
-  // NEW: Wait for layers to fully render before checking URL
-  setTimeout(() => {
-    openCellFromURL();
-  }, 1000); // Give it 1 second to render
+  try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
 }
 
 const legend = $("legend");
 const burger = $("legend-burger");
 const legendToggle = $("legend-toggle");
 const legendContent = $("legend-content");
-
-
-
-// Make legend compact in embed mode
-if (IS_EMBED && legend && legendContent) {
-  // Collapse content, keep the small header ("PTAL Score") visible
-  legendContent.style.display = "none";
-  legend.classList.add("collapsed");
-  if (legendToggle) {
-    // If the toggle button is visible on desktop, show a "+" to expand
-    legendToggle.style.display = "block";
-    legendToggle.textContent = "+";
-  }
-}
-
 
 if (burger && legend) {
   burger.addEventListener("click", (e) => {
@@ -714,11 +714,13 @@ const heightToggle = $("height-toggle");
 const transitToggle = $("transit-toggle");
 const floodToggle = $("flood-toggle");
 const parkingToggle = $("parking-toggle");
+const greenSpaceToggle = $("greenspace-toggle");
 
 function applyFilter() {
   showMismatchesOnly = mismatchToggle ? mismatchToggle.checked : false;
   showFloodOverlay = floodToggle ? floodToggle.checked : false;
   showParkingOverlay = parkingToggle ? parkingToggle.checked : false;
+  hideGreenSpace = greenSpaceToggle ? greenSpaceToggle.checked : false;
   if (ptalLayer) ptalLayer.setStyle(style);
 }
 
@@ -727,6 +729,7 @@ if (heightToggle) heightToggle.addEventListener("change", applyFilter);
 if (transitToggle) transitToggle.addEventListener("change", applyFilter);
 if (floodToggle) floodToggle.addEventListener("change", applyFilter);
 if (parkingToggle) parkingToggle.addEventListener("change", applyFilter);
+if (greenSpaceToggle) greenSpaceToggle.addEventListener("change", applyFilter);
 
 const searchBtn = $("search-btn");
 const searchInput = $("address-input");
