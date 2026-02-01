@@ -1,19 +1,19 @@
 # Brisbane Public Transport Accessibility Level (PTAL) Methodology
 
-**Version 0.8.2 | January 2026**
+**Version 0.9 | February 2026**
 
 ---
 
 ## Table of Contents
 
 1. [Purpose](#purpose)  
-2. [What PTAL measures (and what it doesn’t)](#what-ptal-measures-and-what-it-doesnt)  
+2. [What PTAL measures (and what it doesn't)](#what-ptal-measures-and-what-it-doesnt)  
 3. [Methodology overview](#methodology-overview)  
    1. [Capacity weighting by vehicle type](#1-capacity-weighting-by-vehicle-type)  
    2. [Reliability adjustments](#2-reliability-adjustments)  
    3. [Route dominance decay](#3-route-dominance-decay)  
    4. [Bidirectional counting](#4-bidirectional-counting)  
-   5. [Mode-specific catchments with distance decay](#5-mode-specific-catchments-with-distance-decay)  
+   5. [Mode-specific catchments with distance estimation](#5-mode-specific-catchments-with-distance-estimation)  
    6. [PTAL band thresholds](#6-ptal-band-thresholds)
    7. [Parking rate analysis](#7-parking-rate-analysis)
    8. [Flood planning area overlays](#8-flood-planning-area-overlays)
@@ -50,7 +50,7 @@ This is an independent analytical tool, not an official planning instrument. It 
 
 **PTAL assesses:**
 - Service frequency during peak periods (7-9am weekday)
-- Walking distance to stops and stations (via pedestrian network)
+- Walking distance to stops and stations (estimated pedestrian network distance)
 - Vehicle capacity and mode quality (train vs bus vs ferry)
 - Service reliability based on published on-time performance
 
@@ -121,7 +121,7 @@ Multiple routes serving the same location provide redundancy but with diminishin
 
 Inbound and outbound services are counted separately, as they serve different trip purposes. A location with 12 inbound and 12 outbound services per hour has genuinely better accessibility than one with 12 services in a single direction (no return journey option).
 
-**5. Mode-specific catchments**
+**5. Mode-specific catchments with distance estimation**
 
 Walking catchment distances reflect infrastructure permanence and observed passenger behaviour:
 
@@ -133,13 +133,19 @@ Walking catchment distances reflect infrastructure permanence and observed passe
 | Bus stops | 400m |
 | KittyCat stops | 400m |
 
+**Distance calculation methodology:**
+- Distances are calculated using Euclidean (straight-line) distance with a network multiplier
+- Standard pedestrian routes: Euclidean distance × 1.3 (accounts for indirect paths, crossings, corners)
+- River crossings: Euclidean distance × 3.0 (penalizes routes crossing the Brisbane River where bridges are not directly accessible)
+- River crossing detection: Uses Brisbane City Council service catchment boundaries; paths that exit and re-enter the catchment are assumed to cross the river
+
 **Rationale for 800m rail/busway catchments:**
 - International PTAL methodologies use 800-960m for rail (London: 960m, Melbourne: 800m, Auckland: 800m)
 - Brisbane development guidelines recognise 800m station catchments for Transit-Oriented Development
 - Research demonstrates passengers walk approximately twice as far for high-quality service
 - Rail and busway represent permanent infrastructure worth walking to
-- This methodology uses 800m (not 960m) to account for Brisbane’s subtropical climate
-- Network distance calculation (not straight-line) adds further conservatism
+- This methodology uses 800m (not 960m) to account for Brisbane's subtropical climate
+- Network distance multiplier (1.3×) adds further conservatism
 - Hard cutoff at 801m means locations just beyond the catchment receive no credit
    
 **Rationale for CityCat 800m catchment:**
@@ -147,9 +153,6 @@ Walking catchment distances reflect infrastructure permanence and observed passe
 - Cross-river accessibility is structurally valuable in a river-divided city
 - CityCat terminals feature prominently in real estate marketing, demonstrating market recognition of their value
 - Service operates independent of road traffic
-
-**Network distance calculation:**
-All catchments use pedestrian network distance (actual walkable paths via footpaths, crossings, and bridges) rather than straight-line distance. This accounts for barriers such as rivers, highways, and parks.
 
 **6. PTAL band thresholds**
 
@@ -167,7 +170,7 @@ Thresholds calibrated to Brisbane conditions based on sample locations with know
 
 The tool compares Brisbane City Council's current parking minimums against PTAL-informed rates used in comparable cities.
 
-**Current Brisbane City Council parking minimums (including vistor parking):**
+**Current Brisbane City Council parking minimums (including visitor parking):**
 
 | Location type | 1-bed | 2-bed | 3-bed | 4+ bed |
 |--------------|-------|-------|-------|--------|
@@ -193,8 +196,8 @@ The tool compares Brisbane City Council's current parking minimums against PTAL-
 Brisbane's rates are more conservative than Victoria's, maintaining higher minimums in transit-rich areas.
 
 **Parking cost impact:**
-At-grade parking: ~$40,000 per space
-Basement parking: ~$80,000-$100,000 per space
+- At-grade parking: ~$40,000 per space
+- Basement parking: ~$80,000-$100,000 per space
 
 Reducing parking from 2.25 to 1.25 spaces per 2-bed unit saves approximately $80,000-$100,000 per dwelling in construction costs in areas requiring structured parking.
 
@@ -214,10 +217,13 @@ The tool maps Brisbane City Council's Flood Planning Areas (FPAs) to show where 
 **Source:** Brisbane City Plan 2014, Flood Overlay Code
 
 **Methodology:**
-Flood planning areas are spatially joined to PTAL grid cells. A cell is flagged as flood-constrained if any portion intersects with FPA1, FPA2A, FPA2B, or FPA3.
+Flood planning areas are spatially joined to PTAL grid cells. A cell is flagged as flood-constrained if its centroid intersects with FPA1, FPA2A, FPA2B, or FPA3.
+
+**Grid filtering:**
+Cells with centroids in FPA1 (river zones with no developable land) are excluded from the analysis entirely. These represent the Brisbane River, creek corridors, and other areas that are primarily water bodies rather than developable land.
 
 **Interpretation:**
-Flood constraints don't eliminate development potential, but they add cost and reduce feasibility:
+Flood constraints don't eliminate development potential (except FPA1), but they add cost and reduce feasibility:
 - Elevated habitable floors increase construction costs
 - Basement parking becomes impractical in flood-prone areas
 - Some sites may be excluded from insurance markets
@@ -234,22 +240,22 @@ The tool does not assess future flood risk under climate change scenarios, which
 
 For each 100m × 100m grid cell:
 
-1. Identify all stops within mode-specific catchment distance using Euclidean network calculation:
-
-- Rail/busway/CityCat stops: within 800m
-- Bus/KittyCat stops: within 400m
-
-2. For each stop within catchment, extract 7-9am weekday services from GTFS data
-3. Calculate services per hour per route-direction
-4. Apply capacity weighting based on vehicle type
-5. Apply reliability adjustment based on mode
-6. Calculate effective frequency for each route-direction serving the cell
-7. Sort routes by effective frequency (descending)
-8. Apply route dominance decay to calculate total effective capacity
-9. Assign PTAL band based on threshold
+1. Filter grid to exclude cells outside Brisbane City Council service catchment
+2. Filter grid to exclude FPA1 river zones (no developable land)
+3. Filter grid to exclude CN conservation zones (environmental protection)
+4. Identify all stops within mode-specific catchment distance using Euclidean distance with network multiplier:
+   - Rail/busway/CityCat stops: within 800m (Euclidean × 1.3, or × 3.0 if crossing river)
+   - Bus/KittyCat stops: within 400m (Euclidean × 1.3, or × 3.0 if crossing river)
+5. For each stop within catchment, extract 7-9am weekday services from GTFS data
+6. Calculate services per hour per route-direction
+7. Apply capacity weighting based on vehicle type
+8. Apply reliability adjustment based on mode
+9. Calculate effective frequency for each route-direction serving the cell
+10. Sort routes by effective frequency (descending)
+11. Apply route dominance decay to calculate total effective capacity
+12. Assign PTAL band based on threshold
 
 **Formula:**
-
 ```
 Total Effective Capacity = Σ(Services/hr × Capacity Weight × Reliability Factor × Decay Factor)
 ```
@@ -259,25 +265,25 @@ Where decay factor depends on route rank (1st route: 1.0, 2nd: 0.5, 3rd: 0.3, et
 **Example calculation:**
 
 For a cell served by Dutton Park station and Logan Road buses:
-
 ```
 Route 1 - Train inbound: 8 services/hr × 9.0 capacity × 0.95 reliability × 1.00 decay = 68.4 units
 Route 2 - Train outbound: 8 services/hr × 9.0 capacity × 0.95 reliability × 0.50 decay = 34.2 units
 Route 3 - Bus 160 inbound: 4 services/hr × 1.0 capacity × 0.85 reliability × 0.30 decay = 1.0 units
 Route 4 - Bus 160 outbound: 4 services/hr × 1.0 capacity × 0.85 reliability × 0.20 decay = 0.7 units
 
-Total Effective Capacity = 104.3 units → PTAL 4
+Total Effective Capacity = 104.3 units → PTAL 4A
 ```
+
 ## Data sources
 
 - **GTFS schedule data:** TransLink South East Queensland, current timetables (January 2026)
 - **Vehicle capacity specifications:** Published by TransLink and manufacturers
 - **On-time performance:** TransLink monthly punctuality and reliability performance reports (2023-2025)
-- **Street network:** OpenStreetMap network, extracted January 2026
+- **Service catchment boundaries:** Brisbane City Council GIS data (used for river crossing detection)
 - **Parking rates:** Brisbane City Plan 2014, Transport, Access, Parking and Servicing Code; Victorian Government Activity Centre Zone Schedule 2024
 - **Flood planning areas:** Brisbane City Plan 2014, Flood Overlay mapping (Council GIS data)
 - **Zoning and height limits:** Brisbane City Plan 2014, Zone Code overlays
-- **Grid geometry:** 100m × 100m cells within 10km radius of Roma Street Station (lat -27.4652, lon 153.0191)
+- **Grid geometry:** 100m × 100m cells within 15km radius of Roma Street Station (lat -27.4650, lon 153.0242), filtered to exclude river zones (FPA1) and conservation zones (CN)
 
 All data sources are publicly available or derived from open government data.
 
@@ -291,9 +297,12 @@ All data sources are publicly available or derived from open government data.
 
 3. **No destination assessment:** PTAL measures frequency and capacity, not whether services go to useful destinations. A location with frequent service to limited destinations scores higher than one with less-frequent service to many destinations.
 
-4. **Network distance approximation:** Walking distances use OpenStreetMap network, which may not perfectly reflect actual pedestrian routes (e.g., missing informal paths, private access ways, or temporary closures).
+4. **Estimated network distance:** Walking distances use Euclidean distance × 1.3 multiplier (or × 3.0 for river crossings), not actual pedestrian routing. This is a simplified approximation that may:
+   - Underestimate distances where paths are particularly indirect
+   - Overestimate distances where direct paths exist
+   - Not perfectly capture bridge locations and accessibility
 
-5. **Walking surface quality not assessed:** Network distance treats all pedestrian paths as equivalent. The methodology does not account for:
+5. **Walking surface quality not assessed:** Distance calculation treats all paths as equivalent. The methodology does not account for:
    - **Gradient and topography:** Brisbane's hilly terrain means some 400m walks involve significant elevation change (e.g., Red Hill, Highgate Hill, Kangaroo Point)
    - **Surface quality:** Footpath condition, width, lighting, and weather protection vary substantially
    - **Accessibility barriers:** Stairs, steep ramps, missing kerb cuts, or narrow paths restrict access for people with mobility constraints, parents with prams, elderly residents, and wheelchair users
@@ -307,30 +316,34 @@ All data sources are publicly available or derived from open government data.
 
 8. **Weather and seasonal variation:** Analysis doesn't account for Brisbane's climate impacts on walking distances (heat, humidity, afternoon storms) or ferry service weather cancellations.
 
-9. **10km radius constraint:** Current analysis limited to inner Brisbane. Outer areas not yet assessed.
+9. **15km radius constraint:** Current analysis covers inner and middle-ring Brisbane. Outer suburban areas not yet assessed.
 
-10. **Parking analysis limitations:**
+10. **River crossing approximation:** River crossings are penalized (3× distance multiplier) based on service catchment boundaries, but actual bridge locations and accessibility are not mapped. This may:
+    - Under-penalize locations with convenient bridge access
+    - Over-penalize locations where bridges exist but catchment boundaries suggest river crossing
+
+11. **Parking analysis limitations:**
     - Analysis assumes standard dwelling mix (predominantly 2-bed units) for comparison purposes
     - Does not account for unbundled parking (where parking spaces are sold separately from units)
     - Market demand for parking may differ from minimum requirements in specific locations
     - Does not assess on-street parking availability or residential parking permit schemes
 
-11. **Flood overlay limitations:**
+12. **Flood overlay limitations:**
     - Uses current flood mapping; does not incorporate climate change projections
     - Binary classification (flood-affected or not) doesn't capture severity gradient
     - Does not assess flood mitigation measures (levees, pump stations, elevated access) that may reduce practical impact
     - Some flood-affected sites may still be developable with appropriate engineering; overlay flags constraint, not prohibition
 
-12. **Environmental overlay limitations:**
-    - Does not consider mapped environmental conservation values
-    - Development is not proposed where contrary to conservation values, however the tool does still map their transit accesibility and  zoning for completeness
-    - Areas like Mt Cootha, Toohey Forest largely score PTAL 1 'Poor' in any case
- 
+13. **Environmental overlay limitations:**
+    - Does not consider other mapped environmental conservation values beyond CN/OS/SR zoning
+    - Development is not proposed where contrary to conservation values; the tool excludes these areas for completeness
+
 **Assumptions requiring validation:**
 
 - CityCat terminals treated equivalently to train stations for catchment purposes (800m) based on infrastructure permanence and market behaviour; this may overstate ferry accessibility relative to rail
 - Route dominance decay coefficients (0.50, 0.30, 0.20...) are informed estimates, not empirically derived for Brisbane
-- Distance decay function (linear from 400-800m) is simplified; actual willingness-to-walk likely varies by individual, weather, topography, and path quality
+- Distance multipliers (1.3× for standard paths, 3.0× for river crossings) are simplified; actual network distances vary by location
+- Busway station identification in GTFS data may be incomplete, affecting catchment assignments
 
 ## Comparison to other PTAL methodologies
 
@@ -339,87 +352,124 @@ All data sources are publicly available or derived from open government data.
 - **Reliability adjustment:** TfL uses scheduled service; this methodology discounts by on-time performance  
 - **Route decay:** TfL uses simpler accessibility index; this methodology applies aggressive decay to prevent route-piling artifacts
 - **Climate context:** TfL 960m rail catchment; this methodology uses 800m acknowledging Brisbane's subtropical climate
+- **Distance calculation:** TfL uses network routing; this methodology uses Euclidean distance with multiplier
+- **Environmental filtering:** This methodology excludes river zones (FPA1) and conservation areas (CN) from analysis
 
 **Alignment with Australian practice:**
 - Melbourne PTAL (used for Planning Scheme Amendment C309) uses 800m rail catchments
 - This methodology's thresholds and definitions aim for consistency with Australian TOD policy settings
+- Victorian Government PTAL reforms provide comparison framework for parking recommendations
 
 ## Map overlay system
 
-The tool provides three optional overlays that can be toggled independently:
+The tool provides four optional overlays that can be toggled independently:
 
 **Height mismatch (red borders):**
 - Shows PTAL 4A/4B cells where current maximum heights are below recommended minimums
-- PTAL 4B cells with <30 storeys maximum
-- PTAL 4A cells with <16 storeys maximum
+- PTAL 4B cells with <16 storeys maximum (unlimited height recommended)
+- PTAL 4A cells with <16 storeys maximum (16-30 storeys recommended)
 - Indicates locations where planning rules prevent density despite excellent transit
 
+  **Transit gaps (purple borders):**
+- Shows PTAL 1-2 cells zoned for medium-density or higher
+- Indicates car-dependent high-density zoning that generates traffic congestion
+- Flags locations where transit should be upgraded or zoning reduced
+
 **Parking mismatch (orange diagonal hatch):**
-- Shows PTAL 3+ cells where parking requirements exceed recommended rates
-- Excludes City Core (already at appropriate rates)
+- Shows cells where PTAL-recommended parking rates are lower than current BCC requirements
 - Indicates where excessive parking requirements inflate housing costs despite good transit access
+- Intensity reflects magnitude of excess parking requirement
 
 **Flood constraints (blue diagonal hatch):**
-- Shows cells intersecting with any Flood Planning Area (FPA1, FPA2A, FPA2B, FPA3)
+- Shows cells intersecting with FPA2A, FPA2B, or FPA3 (FPA1 river zones excluded from grid entirely)
 - Indicates where flood risk adds development complexity
 - Does not mean development is impossible, but flags additional constraints
 
-**Transit gaps (purple borders):**
-- Shows PTAL 1 cells zoned for high-density residential
-- Indicates car-dependent high-density zoning that generates traffic congestion
-- Flags locations where transit should be upgraded or zoning reduced
+**Green space (no fill):**
+- Excludes cells zoned for conservation, open space, sports and recreation
 
 Overlays can be combined to identify compound constraints (e.g., high-PTAL locations with both height restrictions and flood planning areas).
 
 ## Future development
 
-These are the improvements I’m considering:
+Improvements under consideration:
 
-- **River crossing logic:** Support calculation of catchment areas enabled by pedestrian-accessible bridges
-
-- **Expanded coverage:** Extend beyond 10km radius to cover Greater Brisbane
-
+- **Bridge-aware routing:** Map pedestrian bridge locations for accurate river crossing accessibility
+- **Expanded coverage:** Extend beyond 15km radius to cover outer Brisbane suburbs
 - **Off-peak analysis:** Separate PTAL scores for interpeak, evening, and weekend service
-
 - **Destination-based assessment:** Weight services by employment/education accessibility
-
 - **Crowding adjustments:** Incorporate passenger load data where available
-
-- **Scenario testing:** Model accessibility impacts of proposed infrastructure (e.g., Brisbane Metro, CRR)
-
+- **Scenario testing:** Model accessibility impacts of proposed infrastructure (e.g., Brisbane Metro, Cross River Rail)
 - **Active transport:** Overlay accessibility of active transport corridors
+- **Usability enhancements:** Improve accessibility for vision impaired and colourblind users
 
-- **Usability Enhancements:** Improve accessibility for vision impaired and colourblind users
-
-  
 ## Technical implementation
 
-- **Calculation:** Python 3.12 with geopandas, pandana/OSMnx for network analysis
-- **Hosting:** Static site via GitHub Pages
-- **Visualisation:** Leaflet with progressive tile loading
-- **Code availability:** Methodology and calculation scripts available on request for peer review
+**Backend processing:**
+- **Language:** Python 3.9+
+- **Core libraries:** 
+  - `geopandas` - Spatial data operations and geometric processing
+  - `pandas` - GTFS data processing and tabular analysis
+  - `shapely` - Geometric operations (Point, Polygon, LineString)
+  - `pyproj` - Coordinate system transformations (WGS84 ↔ GDA2020/MGA56)
+- **Data sources:** Direct GTFS CSV parsing (no specialized transit libraries)
+- **Grid generation:** True 100m × 100m squares using projected CRS (EPSG:7856), transformed to geographic CRS (EPSG:4326) for web delivery
+- **Distance calculation:** Euclidean distance with network multipliers (1.3× standard, 3.0× river crossing)
+- **Output format:** Single GeoJSON file (~40MB uncompressed, ~4.5MB gzipped)
+
+**Frontend:**
+- **Hosting:** GitHub Pages (static hosting)
+- **Map library:** Leaflet 1.9.4 with efficient GeoJSON rendering
+- **Data delivery:** Single compressed GeoJSON (no tiling required for current dataset size)
+- **Interactivity:** Client-side filtering and overlay toggling
+
+**Code availability:**
+- Full methodology and calculation scripts available in the project repository
+- Repository: https://github.com/brisbane-ptal/explorer
+
+**Performance characteristics:**
+- Grid cells: ~65,000 (after filtering to service catchment)
+- Processing time: ~20 minutes on standard hardware
+- Browser loading: <2 seconds for initial map render
+- Memory footprint: ~60MB uncompressed, ~5MB compressed
 
 ## Attribution and contact
 
-This analysis was developed by a Brisbane-based urban planning analyst as an independent research project.
+This analysis was developed by a Brisbane-based designer and urban planning analyst as an independent research project.
+
 The methodology is offered for public use and critique. Corrections, suggestions, and data quality feedback are welcomed.
-For methodology questions, data corrections, or collaboration inquiries: #nospam brisbaneptal at gmail dot com with subject line 'PTAL Explorer'
+
+For methodology questions, data corrections, or collaboration inquiries: brisbaneptal@gmail.com with subject line 'PTAL Explorer'
 
 ## Acknowledgements
 
 - Transport for London for original PTAL methodology development
 - TransLink Queensland for open GTFS data
-- OpenStreetMap contributors for street network data
+- Brisbane City Council for GIS data availability
+- OpenStreetMap contributors (service catchment geometry based on OSM-derived boundaries)
 
 ---
 
 ## Version history
-- v0.2 (January 2026): 
+
+- **v0.9 (February 2026):**
+  - Expanded coverage to 15km radius
+  - Added FPA1 river zone filtering (pure water, no land)
+  - Added Green Space (CN/OS/SR Zones) filtering
+  - Improved height mismatch detection using PTAL bands
+  - Added parking mismatch boolean field
+  - Amended fauly logic which was supressing 800m catchments for busway stations
+  - ~65,000 cells after filtering (vs ~30,000 at 10km)
+
+- **v0.8 (January 2026):** 
   - Expanded coverage to 10km radius
   - Added parking rate analysis and recommendations
-  - Added flood planning area overlays
-  - Refined PTAL 4A/4B threshold (added capacity-based split)
-- v0.1 (January 2026): Initial methodology documentation
+  - Added flood planning area overlays (FPA1-3)
+  - Refined PTAL 4A/4B threshold (capacity-based split)
+  - Implemented true 100m × 100m grid squares using projected CRS
+
+- **v0.1 (January 2026):** Initial methodology documentation
 
 ## Licence 
-CC-BY-4.0 
+
+CC-BY-4.0
