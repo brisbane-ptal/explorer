@@ -12,6 +12,7 @@ const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 
 // Change to (production):
 const PTAL_GZ_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz?v=${APP_VERSION}`;
 const PTAL_JSON_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson?v=${APP_VERSION}`;
+const IS_EMBED = new URLSearchParams(window.location.search).get("embed") === "1";
 
 async function loadPTAL() {
   let data = null;
@@ -134,6 +135,10 @@ L.control.scale({
   imperial: false,
   metric: true
 }).addTo(map);
+
+if (IS_EMBED) {
+  document.body.classList.add("embed");
+}
 
 // PTAL color palette
 const PTAL_COLORS = {
