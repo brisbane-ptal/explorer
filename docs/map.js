@@ -29,52 +29,15 @@ async function loadPTAL() {
       console.log("✓ Loaded PTAL (gz):", data?.features?.length ?? 0, "features");
       
       fullData = data;
-      const innerCells = data.features.filter(f => {
-        const dist = f.properties.distance_from_center_km;
-        return dist !== undefined && dist !== null && dist <= 5;
-      });
-      const outerCells = data.features
-        .filter(f => {
+      const innerCells = {
+        type: "FeatureCollection",
+        features: data.features.filter(f => {
           const dist = f.properties.distance_from_center_km;
-          return dist !== undefined && dist !== null && dist > 5;
+          return dist !== undefined && dist !== null && dist <= 5;
         })
-        .sort((a, b) => {
-          const distA = a.properties.distance_from_center_km || 999;
-          const distB = b.properties.distance_from_center_km || 999;
-          return distA - distB;
-        });
-      
-      console.log(`✓ Inner 5km: ${innerCells.length} | Outer: ${outerCells.length}`);
-      
-      ptalData = { type: "FeatureCollection", features: innerCells };
-      addPTALLayer(ptalData);
-      
-      const batchSize = 10000;
-      let loaded = 0;
-      
-      function loadNextBatch() {
-        if (loaded >= outerCells.length) {
-          console.log("✓ All cells loaded");
-          return;
-        }
-        
-        const batch = outerCells.slice(loaded, loaded + batchSize);
-        ptalData.features.push(...batch);
-        loaded += batch.length;
-        
-        console.log(`Loading batch: ${loaded}/${outerCells.length}`);
-        
-        if (ptalLayer) {
-          ptalLayer.clearLayers();
-          ptalLayer.addData(ptalData);
-        }
-        
-        setTimeout(loadNextBatch, 100);
-      }
-      
-      setTimeout(loadNextBatch, 500);
-      return;  // Exit early on success
-    }
+      };
+      console.log(`✓ Showing inner 5km: ${innerCells.features.length} features`);
+      return addPTALLayer(innerCells);
   } catch (err) {
     console.warn("⚠️  .gz failed, trying .json fallback:", err.message);
   }
