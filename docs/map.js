@@ -1,8 +1,8 @@
 /* =========================================================
-   Brisbane PTAL Explorer — map.js (v0.9)
+   Brisbane PTAL Explorer — map.js (v0.9.1)
    ========================================================= */
 
-const APP_VERSION = "v0.9";  // ← Increment this after running pipeline
+const APP_VERSION = "v0.9.1";  // ← Increment this after running pipeline
 const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
 
 // Current (localhost):
@@ -17,8 +17,11 @@ async function loadPTAL() {
   let data = null;
 
   try {
-    const resGz = await fetch(PTAL_GZ_URL, { cache: "default" });
-
+    const resGz = await fetch(PTAL_GZ_URL, {
+        cache: "no-store",
+        headers: { "Accept": "application/octet-stream" }
+    });
+     
     if (resGz.ok) {
       const buffer = await resGz.arrayBuffer();
       const decompressed = pako.ungzip(new Uint8Array(buffer), { to: "string" });
@@ -81,13 +84,18 @@ async function loadPTAL() {
     }
 
   } catch (err) {
-    console.warn("⚠️  .gz failed, trying .json fallback:", err?.message || err);
-  }
+  console.error("❌ Failed to load PTAL .gz file", err);
+  alert("PTAL data failed to load. Please refresh the page.");
+  return;
+}
 
   // Fallback .json
   try {
-    const resJson = await fetch(PTAL_JSON_URL, { cache: "default" });
-
+    const resJson = await fetch(PTAL_JSON_URL, {
+        cache: "no-store",
+        headers: { "Accept": "application/json" }
+    });
+     
     if (resJson.ok) {
       data = await resJson.json();
       console.log("✓ Loaded PTAL (json):", data?.features?.length ?? 0, "features");
@@ -102,7 +110,7 @@ async function loadPTAL() {
   }
 }
 
-const NOMINATIM_EMAIL = "";
+const NOMINATIM_EMAIL = "brisbaneptal@gmail.com";
 
 let ptalLayer = null;
 let ptalData = null;
