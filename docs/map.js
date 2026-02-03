@@ -71,13 +71,12 @@ async function loadPTAL() {
         console.log(`⏳ Loading outer batch: ${loaded}/${outer.length}`);
 
         if (ptalLayer) {
-          ptalLayer.clearLayers();
-          ptalLayer.addData(ptalData);
-          createSVGPatterns();
-          ptalLayer.setStyle(style);
+          ptalLayer.addData({ type: "FeatureCollection", features: batch });
         }
 
-        setTimeout(loadNextBatch, 120);
+
+        requestIdleCallback(loadNextBatch, { timeout: 200 });
+
       }
 
       setTimeout(loadNextBatch, 600);
@@ -123,7 +122,8 @@ let showParkingOverlay = false;
 let hideGreenSpace = false;
 let searchMarker = null;
 
-const map = L.map("map").setView([-27.4650, 153.0242], 15);
+const map = L.map("map", { preferCanvas: true }).setView([-27.4650, 153.0242], 15);
+
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap contributors",
