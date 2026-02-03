@@ -75,7 +75,7 @@ async function loadPTAL() {
         }
 
 
-        requestIdleCallback(loadNextBatch, { timeout: 200 });
+        requestAnimationFrame(() => setTimeout(loadNextBatch, 100));
 
       }
 
