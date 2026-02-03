@@ -828,8 +828,8 @@ loadPTAL();
 // Footer email (lightly obfuscated to avoid scraping)
 // ---------------------------------------------------------
 (function () {
-  const user = "hello";
-  const domain = "brisbaneptal.org";
+  const user = "brisbaneptal";
+  const domain = "gmail.com";
   const el = document.getElementById("email-link");
   if (el) {
     el.href = `mailto:${user}@${domain}`;
