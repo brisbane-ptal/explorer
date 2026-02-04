@@ -675,7 +675,7 @@ function addPTALLayer(data) {
   // CRITICAL: Create patterns AFTER layer is added
   createSVGPatterns();
 
-  // ADD HERE - BEFORE the closing brace:
+  // Cell deep-linking
   const urlParams = new URLSearchParams(window.location.search);
   const cellId = urlParams.get('cell');
   if (cellId && ptalLayer) {
@@ -689,8 +689,9 @@ function addPTALLayer(data) {
   }
 
   try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
-  
+}  // ← THIS CLOSES THE FUNCTION
 
+// Legend controls (runs at page load, not inside addPTALLayer)
 const legend = $("legend");
 const burger = $("legend-burger");
 const legendToggle = $("legend-toggle");
@@ -707,6 +708,7 @@ if (burger && legend) {
     if (window.innerWidth <= 768) legend.classList.remove("open");
   });
 }
+
 
 if (legendToggle && legendContent && legend) {
   if (window.innerWidth > 768) {
