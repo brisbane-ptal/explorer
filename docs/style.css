@@ -108,7 +108,7 @@ header p{
    ============================== */
 #map{
   flex: 1;  /* fills remaining space */
-
+}
 
 /* ==============================
    Desktop panels (legend + info)
