@@ -107,8 +107,11 @@ header p{
    Map
    ============================== */
 #map{
-  flex: 1;  /* fills remaining space */
+  flex: 1;
+  min-height: 400px; /* Fallback for Leaflet initialization */
+  height: 100%;      /* Fill flex container */
 }
+
 
 /* ==============================
    Desktop panels (legend + info)
