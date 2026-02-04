@@ -683,13 +683,14 @@ function addPTALLayer(data) {
       if (layer.feature?.properties?.id === cellId) {
         const bounds = layer.getBounds();
         map.fitBounds(bounds, { maxZoom: 17, padding: [50, 50] });
-        setTimeout(() => showInfo({ target: layer }), 300);
+        layer.openTooltip();
+         setTimeout(() => showInfo({ target: layer }), 300);
       }
     });
   }
 
   try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
-}  // ← THIS CLOSES THE FUNCTION
+}
 
 // Legend controls (runs at page load, not inside addPTALLayer)
 const legend = $("legend");
