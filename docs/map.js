@@ -675,8 +675,20 @@ function addPTALLayer(data) {
   // CRITICAL: Create patterns AFTER layer is added
   createSVGPatterns();
 
+  // ADD HERE - BEFORE the closing brace:
+  const urlParams = new URLSearchParams(window.location.search);
+  const cellId = urlParams.get('cell');
+  if (cellId && ptalLayer) {
+    ptalLayer.eachLayer(layer => {
+      if (layer.feature?.properties?.id === cellId) {
+        const bounds = layer.getBounds();
+        map.fitBounds(bounds, { maxZoom: 17, padding: [50, 50] });
+        setTimeout(() => showInfo({ target: layer }), 300);
+      }
+    });
+  }
+
   try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
-}
 
 const legend = $("legend");
 const burger = $("legend-burger");
