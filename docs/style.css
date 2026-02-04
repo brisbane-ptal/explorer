@@ -17,7 +17,11 @@ body{
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color:#333;
   background:#fff;
+  display: flex;           /* ADD */
+  flex-direction: column;  /* ADD */
+  min-height: 100vh;       /* ADD */
 }
+
 
 a { color: var(--green); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -103,11 +107,8 @@ header p{
    Map
    ============================== */
 #map{
-  height: calc(100vh - 170px);
-  width: 100%;
-  position: relative;
-  z-index: 0;
-}
+  flex: 1;  /* fills remaining space */
+
 
 /* ==============================
    Desktop panels (legend + info)
@@ -439,7 +440,8 @@ body.embed {
 
 /* Lock map height for embeds */
 body.embed #map {
-  height: 650px;          /* matches iframe default */
+   flex: none;
+   height: 650px;          /* matches iframe default */
   max-height: 650px;
 }
 
