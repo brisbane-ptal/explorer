@@ -689,7 +689,7 @@ function addPTALLayer(data) {
   }
 
   try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
-  }
+  
 
 const legend = $("legend");
 const burger = $("legend-burger");
