@@ -122,7 +122,7 @@ let showParkingOverlay = false;
 let hideGreenSpace = false;
 let searchMarker = null;
 
-const map = L.map("map", { preferCanvas: true }).setView([-27.4650, 153.0242], 15);
+const map = L.map("map").setView([-27.4650, 153.0242], 15);
 
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -679,14 +679,24 @@ function addPTALLayer(data) {
   const urlParams = new URLSearchParams(window.location.search);
   const cellId = urlParams.get('cell');
   if (cellId && ptalLayer) {
-    ptalLayer.eachLayer(layer => {
-      if (layer.feature?.properties?.id === cellId) {
-         const bounds = layer.getBounds();
-         map.fitBounds(bounds, { maxZoom: 15, padding: [50, 50] });
-         layer.openTooltip();
-         setTimeout(() => showInfo({ target: layer }), 300);
-      }
-    });
+    const attemptZoom = () => {
+      let found = false;
+      ptalLayer.eachLayer(layer => {
+        if (layer.feature?.properties?.id === cellId) {
+          found = true;
+          const bounds = layer.getBounds();
+          map.fitBounds(bounds, { maxZoom: 15, padding: [50, 50] });
+          layer.openTooltip();
+          layer.setStyle({ weight: 4, color: '#00ff00', fillOpacity: 0.8 });
+          setTimeout(() => {
+            showInfo({ target: layer });
+            setTimeout(() => layer.setStyle(style(layer.feature)), 2000);
+          }, 300);
+        }
+      });
+      if (!found) setTimeout(attemptZoom, 1000);
+    };
+    attemptZoom();
   }
 
   try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
