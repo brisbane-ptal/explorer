@@ -684,17 +684,20 @@ function addPTALLayer(data) {
       ptalLayer.eachLayer(layer => {
         if (layer.feature?.properties?.id === cellId) {
           found = true;
-          const bounds = layer.getBounds();
-          map.fitBounds(bounds, { maxZoom: 15, padding: [50, 50] });
+          
+          // Zoom to show 6-10 grids (each grid ~100m, so ~800m height = zoom 16)
+          const center = layer.getBounds().getCenter();
+          map.setView(center, 16);
+          
+          // Apply standard click highlight (persistent white border)
+          highlightFeature({ target: layer });
+          
+          // Open tooltip and info panel
           layer.openTooltip();
-          layer.setStyle({ weight: 4, color: '#00ff00', fillOpacity: 0.8 });
-          setTimeout(() => {
-            showInfo({ target: layer });
-            setTimeout(() => layer.setStyle(style(layer.feature)), 2000);
-          }, 300);
+          setTimeout(() => showInfo({ target: layer }), 300);
         }
       });
-      if (!found) setTimeout(attemptZoom, 1000);
+      if (!found) setTimeout(attemptZoom, 1000);  // Retry until outer cells load
     };
     attemptZoom();
   }
