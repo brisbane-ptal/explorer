@@ -703,8 +703,9 @@ if (cellId && ptalLayer) {
     if (!found) setTimeout(attemptZoom, 1000);  // Retry until outer cells load
   };
   attemptZoom();
-}
-try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
+} else {
+  // Only fit to full bounds if NOT deep linking
+  try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
 }
 
 // Legend controls (runs at page load, not inside addPTALLayer)
