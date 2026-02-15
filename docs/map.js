@@ -705,6 +705,7 @@ if (cellId && ptalLayer) {
   attemptZoom();
 }
 try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
+}
 
 // Legend controls (runs at page load, not inside addPTALLayer)
 const legend = $("legend");
