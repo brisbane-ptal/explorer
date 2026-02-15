@@ -707,6 +707,7 @@ if (cellId && ptalLayer) {
   // Only fit to full bounds if NOT deep linking
   try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
 }
+}
 
 // Legend controls (runs at page load, not inside addPTALLayer)
 const legend = $("legend");
