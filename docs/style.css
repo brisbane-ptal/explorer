@@ -4,8 +4,9 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root{
-  --green: #1a9850;
-  --green-dark: #158241;
+  --brisbane-blue: #0052A5;
+  --brisbane-blue-dark: #003d7a;
+  --brisbane-yellow: #FDB913;
   --panel-shadow: 0 2px 10px rgba(0,0,0,0.2);
   --radius: 10px;
   --z-ui: 1200;
@@ -23,14 +24,14 @@ body{
 }
 
 
-a { color: var(--green); text-decoration: none; }
+a { color: var(--brisbane-blue); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 /* ==============================
    Header + top controls
    ============================== */
 header{
-  background: var(--green);
+  background: linear-gradient(135deg, var(--brisbane-blue) 0%, var(--brisbane-blue-dark) 100%);
   color: #fff;
   padding: 16px 14px 14px;
   text-align: center;
@@ -81,12 +82,12 @@ header p{
 
 #search-btn{
   padding: 10px 14px;
-  background: #fff;
-  color: var(--green);
+  background: var(--brisbane-yellow);
+  color: var(--brisbane-blue-dark);
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   font-weight: 700;
+  cursor: pointer;
   white-space: nowrap;
 }
 #search-btn:hover{ filter: brightness(0.96); }
