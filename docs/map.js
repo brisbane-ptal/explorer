@@ -675,35 +675,36 @@ function addPTALLayer(data) {
   // CRITICAL: Create patterns AFTER layer is added
   createSVGPatterns();
 
-  // Cell deep-linking
-  const urlParams = new URLSearchParams(window.location.search);
-  const cellId = urlParams.get('cell');
-  if (cellId && ptalLayer) {
-    const attemptZoom = () => {
-      let found = false;
-      ptalLayer.eachLayer(layer => {
-        if (layer.feature?.properties?.id === cellId) {
-          found = true;
-          
-          // Zoom to show 6-10 grids (each grid ~100m, so ~800m height = zoom 16)
-          const center = layer.getBounds().getCenter();
-          map.setView(center, 16);
-          
-          // Apply standard click highlight (persistent white border)
-          highlightFeature({ target: layer });
-          
-          // Open tooltip and info panel
-          layer.openTooltip();
-          setTimeout(() => showInfo({ target: layer }), 300);
-        }
-      });
-      if (!found) setTimeout(attemptZoom, 1000);  // Retry until outer cells load
-    };
-    attemptZoom();
-  }
-
-  try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
+// Cell deep-linking
+const urlParams = new URLSearchParams(window.location.search);
+const cellId = urlParams.get('cell');
+if (cellId && ptalLayer) {
+  const attemptZoom = () => {
+    let found = false;
+    ptalLayer.eachLayer(layer => {
+      if (layer.feature?.properties?.id === cellId) {
+        found = true;
+        
+        // Zoom to show the cell with context (padding shows ~3-5 surrounding cells)
+        const bounds = layer.getBounds();
+        map.fitBounds(bounds, {
+          padding: [150, 150],  // Shows surrounding context
+          maxZoom: 17           // Close enough to see detail, not too tight
+        });
+        
+        // Apply standard click highlight (persistent white border)
+        highlightFeature({ target: layer });
+        
+        // Open tooltip and info panel
+        layer.openTooltip();
+        setTimeout(() => showInfo({ target: layer }), 300);
+      }
+    });
+    if (!found) setTimeout(attemptZoom, 1000);  // Retry until outer cells load
+  };
+  attemptZoom();
 }
+try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
 
 // Legend controls (runs at page load, not inside addPTALLayer)
 const legend = $("legend");
