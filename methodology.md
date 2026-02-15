@@ -458,7 +458,7 @@ For methodology questions, data corrections, or collaboration inquiries: brisban
   - Added Green Space (CN/OS/SR Zones) filtering
   - Improved height mismatch detection using PTAL bands
   - Added parking mismatch boolean field
-  - Amended fauly logic which was supressing 800m catchments for busway stations
+  - Amended faulty logic which was supressing 800m catchments for busway stations
   - ~65,000 cells after filtering (vs ~30,000 at 10km)
 
 - **v0.8 (January 2026):** 
