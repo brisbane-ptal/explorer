@@ -557,9 +557,10 @@ function showInfo(e) {
   // Set grid link
   const gridLink = $("grid-id-link");
   if (gridLink) {
-    setText("grid-id-link", displayId);
+    gridLink.innerHTML = `${displayId} <span style="font-size:0.8em;">🔗</span>`;
     gridLink.href = `?cell=${gridId}`;
-  }
+    gridLink.title = "Shareable link to this cell";
+}
   
   setText("zone-code", props.Zone_code || "Unknown");
   setHTML("recommended-height", getRecommendedHeight(ptal, total_capacity));
