@@ -3,7 +3,7 @@
    ========================================================= */
 
 const APP_VERSION = "v0.9.2";  // ← Increment this after running pipeline
-const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥";
+const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
    
 const ALPHA_CONFIGS = {
   logan: {
