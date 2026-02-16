@@ -537,13 +537,21 @@ function showInfo(e) {
   // Format grid ID
   const gridMatch = gridId.match(/r([+-]?\d+)_c([+-]?\d+)/);
   let displayId = gridId;
-  
+
   if (gridMatch) {
     const row = parseInt(gridMatch[1]);
     const col = parseInt(gridMatch[2]);
-    const letter = String.fromCharCode(65 + Math.abs(row));
+  
+    // Use row sign for letter position, col sign for number direction
+    const letterIndex = Math.abs(row);
+    const letter = String.fromCharCode(65 + letterIndex);
     const number = Math.abs(col);
-    displayId = `${letter}${number}`;
+  
+    // Add prefixes for negative values
+    const rowPrefix = row < 0 ? 'S' : 'N';  // South/North
+    const colPrefix = col < 0 ? 'W' : 'E';  // West/East
+  
+    displayId = `${rowPrefix}${letter}${colPrefix}${number}`;
   }
   
   // Set PTAL with capacity
