@@ -555,13 +555,50 @@ function showInfo(e) {
   }
   
   // Set PTAL with capacity
+  const categoryEl = document.getElementById("category-label");
+
   if (hasValidPTAL) {
     setText("ptal-score", `${band} · ${capacity ? Math.round(capacity) : '0'} units/hr`);
-    setText("category-label", getPTALLabel(ptal, total_capacity));
+    const label = getPTALLabel(ptal, total_capacity);
+    setText("category-label", label);
+  
+    // Style based on PTAL band
+    if (categoryEl) {
+      const colors = {
+        'Excellent': { bg: '#006837', text: '#fff' },
+        'Very Good': { bg: '#1a9850', text: '#fff' },
+        'Good': { bg: '#a6d96a', text: '#333' },
+        'Moderate': { bg: '#fee08b', text: '#333' },
+        'Poor': { bg: '#d73027', text: '#fff' }
+      };
+    
+      const style = colors[label] || { bg: '#ddd', text: '#333' };
+      categoryEl.style.background = style.bg;
+      categoryEl.style.color = style.text;
+      categoryEl.style.padding = '4px 12px';
+      categoryEl.style.borderRadius = '6px';
+      categoryEl.style.display = 'inline-block';
+      categoryEl.style.fontWeight = '600';
+      categoryEl.style.fontSize = '0.9em';
+      categoryEl.style.marginTop = '4px';
+    }
   } else {
     setText("ptal-score", "not assessed - River / Creek");
     setText("category-label", "Flood constrained area");
+  
+    // Gray styling for flood cells
+    if (categoryEl) {
+      categoryEl.style.background = '#e0e0e0';
+      categoryEl.style.color = '#666';
+      categoryEl.style.padding = '4px 12px';
+      categoryEl.style.borderRadius = '6px';
+      categoryEl.style.display = 'inline-block';
+      categoryEl.style.fontWeight = '600';
+      categoryEl.style.fontSize = '0.9em';
+      categoryEl.style.marginTop = '4px';
+    }
   }
+   
   // Set grid link
   const gridLink = $("grid-id-link");
   if (gridLink) {
