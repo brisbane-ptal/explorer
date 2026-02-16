@@ -10,15 +10,43 @@ const ALPHA_CONFIGS = {
     name: 'Logan PTAL Explorer (Alpha)',
     tagline: 'Mapping public transport accessibility across Logan City',
     center: [-27.6394, 153.1079],
-    zoom: 14,
+    zoom: 12, 
     dataFile: 'logan_ptal_final.geojson.gz',
   },
   goldcoast: {
     name: 'Gold Coast PTAL Explorer (Alpha)',
     tagline: 'Mapping public transport accessibility on the Gold Coast',
     center: [-28.0023, 153.4145],
-    zoom: 14,
+    zoom: 12, 
     dataFile: 'goldcoast_ptal_final.geojson.gz',
+  },
+  ipswich: {
+    name: 'Ipswich PTAL Explorer (Alpha)',
+    tagline: 'Mapping public transport accessibility in Ipswich',
+    center: [-27.6122, 152.7612],
+    zoom: 12, 
+    dataFile: 'ipswich_ptal_final.geojson.gz',
+  },
+  moreton: {
+    name: 'Moreton Bay PTAL Explorer (Alpha)',
+    tagline: 'Mapping public transport accessibility in Moreton Bay Region',
+    center: [-27.3036, 152.9614],
+    zoom: 12,  
+    dataFile: 'moreton_ptal_final.geojson.gz',
+  },
+  redland: {
+    name: 'Redland PTAL Explorer (Alpha)',
+    tagline: 'Mapping public transport accessibility in Redland',
+    center: [-27.5294, 153.2528],
+    zoom: 12,  
+    dataFile: 'redland_ptal_final.geojson.gz',
+  },
+  sunshinecoast: {
+    name: 'Sunshine Coast PTAL Explorer (Alpha)',
+    tagline: 'Mapping public transport accessibility on the Sunshine Coast',
+    center: [-26.6566, 153.0897],
+    zoom: 12,  
+    dataFile: 'sunshinecoast_ptal_final.geojson.gz',
   }
 };
 
