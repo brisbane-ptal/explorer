@@ -1,17 +1,58 @@
 /* =========================================================
-   Brisbane PTAL Explorer — map.js (v0.9.1)
+   Brisbane PTAL Explorer — map.js (v0.9.2)
    ========================================================= */
 
-const APP_VERSION = "v0.9.1";  // ← Increment this after running pipeline
-const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
+const APP_VERSION = "v0.9.2";  // ← Increment this after running pipeline
+const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥
+   
+const ALPHA_CONFIGS = {
+  logan: {
+    name: 'Logan PTAL Explorer (Alpha)',
+    tagline: 'Mapping public transport accessibility across Logan City',
+    center: [-27.6394, 153.1079],
+    zoom: 14,
+    dataFile: 'logan_ptal_final.geojson.gz',
+  },
+  goldcoast: {
+    name: 'Gold Coast PTAL Explorer (Alpha)',
+    tagline: 'Mapping public transport accessibility on the Gold Coast',
+    center: [-28.0023, 153.4145],
+    zoom: 14,
+    dataFile: 'goldcoast_ptal_final.geojson.gz',
+  }
+};
+
+const urlParams = new URLSearchParams(window.location.search);
+const lga = urlParams.get('lga');
+const isAlpha = lga && ALPHA_CONFIGS[lga];
+
+// Override config if alpha LGA requested
+const CONFIG = isAlpha ? ALPHA_CONFIGS[lga] : {
+  name: 'Brisbane PTAL Explorer',
+  center: [-27.4650, 153.0242],
+  zoom: 15,
+  dataFile: 'brisbane_ptal_final.geojson.gz'
+};
+
+// Update page for alpha LGAs
+if (isAlpha) {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.title = `${CONFIG.name} - Public Transport Accessibility`;
+    const h1 = document.querySelector('header h1');
+    const tagline = document.querySelector('header p');
+    if (h1) h1.textContent = CONFIG.name;
+    if (tagline) tagline.textContent = CONFIG.tagline;
+  });
+}
+
 
 // Current (localhost):
 //const PTAL_GZ_URL = `brisbane_ptal_final.geojson.gz`;
 //const PTAL_JSON_URL = `brisbane_ptal_final.geojson`;
 
 // Change to (production):
-const PTAL_GZ_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson.gz?v=${APP_VERSION}`;
-const PTAL_JSON_URL = `https://raw.githubusercontent.com/brisbane-ptal/brisbane-ptal-map/main/docs/brisbane_ptal_final.geojson?v=${APP_VERSION}`;
+const PTAL_GZ_URL = `${CONFIG.dataFile}?v=${APP_VERSION}`;
+const PTAL_JSON_URL = `${CONFIG.dataFile.replace('.gz', '')}?v=${APP_VERSION}`;
 const IS_EMBED = new URLSearchParams(window.location.search).get("embed") === "1";
 
 async function loadPTAL() {
@@ -110,7 +151,7 @@ async function loadPTAL() {
   }
 }
 
-const NOMINATIM_EMAIL = "brisbaneptal@gmail.com";
+const NOMINATIM_EMAIL = ["brisbaneptal", "gmail.com"].join("@");
 
 let ptalLayer = null;
 let ptalData = null;
@@ -122,7 +163,7 @@ let showParkingOverlay = false;
 let hideGreenSpace = false;
 let searchMarker = null;
 
-const map = L.map("map").setView([-27.4650, 153.0242], 15);
+const map = L.map("map").setView(CONFIG.center, CONFIG.zoom);
 
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
