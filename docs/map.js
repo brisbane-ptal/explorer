@@ -395,6 +395,7 @@ function getModeIcon(mode) {
   if (mode === "rail" || mode === "train") return "🚆";
   if (mode === "ferry") return "⛴️";
   if (mode === "busway") return "🚌";
+  if (mode === "tram") return "🚊"; 
   return "🚌";
 }
 
@@ -402,6 +403,7 @@ function getModeLabel(mode) {
   if (mode === "rail" || mode === "train") return "Train";
   if (mode === "ferry") return "Ferry";
   if (mode === "busway") return "Busway";
+  if (mode === "tram") return "Light Rail";
   return "Bus";
 }
 
