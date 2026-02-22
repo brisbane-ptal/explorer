@@ -3,6 +3,19 @@
    ========================================================= */
 
 const APP_VERSION = "v0.9.2";  // ← Increment this after running pipeline
+
+// Auto-detect LGA from subdomain
+const hostname = window.location.hostname;
+if (hostname === "gc.petalexplorer.org" || hostname === "goldcoast.petalexplorer.org") {
+  if (!window.location.search.includes("lga=")) {
+    window.location.search = "?lga=goldcoast";
+  }
+} else if (hostname === "bne.petalexplorer.org" || hostname === "brisbane.petalexplorer.org") {
+  if (!window.location.search.includes("lga=")) {
+    window.location.search = "?lga=brisbane";
+  }
+}
+
 const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
    
 const ALPHA_CONFIGS = {
@@ -18,7 +31,16 @@ const ALPHA_CONFIGS = {
     tagline: 'Mapping public transport accessibility on the Gold Coast',
     center: [-28.0023, 153.4145],
     zoom: 12, 
-    dataFile: 'goldcoast_ptal_final.geojson.gz',
+    dataFile: "goldcoast_ptal_final.geojson.gz",
+    fields: {
+      zone: "zone_code",
+      flood: "flood_constraint",
+      floodValues: ["Very High", "High", "Medium"]
+    },
+    colors: {
+      primary: "#00A8B5",
+      header: "#00A8B5"
+    },
   },
   ipswich: {
     name: 'Ipswich PTAL Explorer (Alpha)',
@@ -56,6 +78,10 @@ const isAlpha = lga && ALPHA_CONFIGS[lga];
 
 // Override config if alpha LGA requested
 const CONFIG = isAlpha ? ALPHA_CONFIGS[lga] : {
+
+if (CONFIG.lga === "goldcoast") {
+  document.getElementById("favicon").href = "favicon-gc.svg";
+}
   name: 'Brisbane PTAL Explorer',
   center: [-27.4650, 153.0242],
   zoom: 15,
@@ -69,6 +95,10 @@ if (isAlpha) {
     const h1 = document.querySelector('header h1');
     const tagline = document.querySelector('header p');
     if (h1) h1.textContent = CONFIG.name;
+    if (CONFIG.colors) {
+      document.documentElement.style.setProperty("--header-color", CONFIG.colors.header);
+      document.documentElement.style.setProperty("--primary-color", CONFIG.colors.primary);
+    }
     if (tagline) tagline.textContent = CONFIG.tagline;
   });
 }
@@ -409,7 +439,7 @@ function getModeLabel(mode) {
 
 function hasPlanningMismatch(props) {
   const band = getPTALBand(props.ptal, props.total_capacity);
-  const zone = props.Zone_code;
+  const zone = props[CONFIG.fields?.zone || "Zone_code"];
   const maxStoreys = Number(props.max_storeys);
   
   // Only check 4A/4B
@@ -423,8 +453,8 @@ function hasPlanningMismatch(props) {
 }
 
 function hasFloodConstraint(props) {
-  const flood = props.flood_constraint;
-  return flood === "FPA1" || flood === "FPA2A" || flood === "FPA2B" || flood === "FPA3";
+  const flood = props[CONFIG.fields?.flood || "fpa_code"];
+  return (CONFIG.fields?.floodValues || ["FPA1", "FPA2A", "FPA2B", "FPA3"]).includes(flood);
 }
 
 function hasParkingMismatch(props) {
@@ -447,8 +477,8 @@ function hasTransitGap(props) {
 }
 
 function isGreenSpace(props) {
-  const z = String(props.Zone_code || "").trim().toUpperCase();
-  return z === "CN" || z === "OS" || z === "SR";
+  const z = String(props[CONFIG.fields?.zone || "Zone_code"] || "").trim().toUpperCase();
+  return z === "CN" || z === "OS" || z === "SR" || z === "RU" || z === "RR" || z === "SP";
 }
 
 function $(id) { return document.getElementById(id); }
@@ -483,7 +513,8 @@ function style(feature) {
 
   // Default border
   let borderColor = "white";
-  let borderWeight = 1;
+  const zoom = map.getZoom();
+  let borderWeight = zoom >= 13 ? 1 : 0.5;
 
   if (planningMismatch) {
     borderColor = "#ff0000";
@@ -561,7 +592,7 @@ function onEachFeature(feature, layer) {
     );
   } else if (flood) {
     layer.bindTooltip(
-      `Flood constraint (${props.flood_constraint})<br>Click for details`,
+      `Flood constraint (${props[CONFIG.fields?.flood || "fpa_code"]})<br>Click for details`,
       { sticky: true, opacity: 0.9 }
     );
   }
@@ -678,7 +709,7 @@ function showInfo(e) {
     gridLink.title = "Shareable link to this cell";
 }
   
-  setText("zone-code", props.Zone_code || "Unknown");
+  setText("zone-code", (props[CONFIG.fields?.zone || "Zone_code"] === "UNK" ? "Unknown" : props[CONFIG.fields?.zone || "Zone_code"]) || "Unknown");
   setHTML("recommended-height", getRecommendedHeight(ptal, total_capacity));
   
   const maxStoreys = Number(props.max_storeys);
@@ -716,7 +747,7 @@ function showInfo(e) {
   const transitGap = hasTransitGap(props);
   const parking = hasParkingMismatch(props);
   
-  showEl("planning-controls", !(props.flood_constraint === "FPA1"));
+  showEl("planning-controls", !(props[CONFIG.fields?.flood || "fpa_code"] === "FPA1"));
   showEl("planning-mismatch-warning", planningMismatch);
   showEl("transit-gap-warning", transitGap);
   showEl("flood-explainer", flood);
@@ -725,7 +756,7 @@ function showInfo(e) {
   showEl("parking-badge", false);
 
   if (flood) {
-    setText("flood-badge", `🌊 ${props.flood_constraint}`);
+    setText("flood-badge", `🌊 ${props[CONFIG.fields?.flood || "fpa_code"]}`);
   }
 
   const stopsList = $("nearby-stops");

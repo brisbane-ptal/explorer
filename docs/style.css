@@ -5,6 +5,7 @@
 
 :root{
   --brisbane-blue: #0052A5;
+  --header-color: #0052A5;
   --brisbane-blue-dark: #003d7a;
   --brisbane-yellow: #FDB913;
   --panel-shadow: 0 2px 10px rgba(0,0,0,0.2);
@@ -31,7 +32,7 @@ a:hover { text-decoration: underline; }
    Header + top controls
    ============================== */
 header{
-  background: linear-gradient(135deg, var(--brisbane-blue) 0%, var(--brisbane-blue-dark) 100%);
+  background: var(--header-color, #0052A5);
   color: #fff;
   padding: 16px 14px 14px;
   text-align: center;
