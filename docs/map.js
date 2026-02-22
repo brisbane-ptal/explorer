@@ -79,9 +79,6 @@ const isAlpha = lga && ALPHA_CONFIGS[lga];
 // Override config if alpha LGA requested
 const CONFIG = isAlpha ? ALPHA_CONFIGS[lga] : {
 
-if (CONFIG.lga === "goldcoast") {
-  document.getElementById("favicon").href = "favicon-gc.svg";
-}
   name: 'Brisbane PTAL Explorer',
   center: [-27.4650, 153.0242],
   zoom: 15,
@@ -98,6 +95,9 @@ if (isAlpha) {
     if (CONFIG.colors) {
       document.documentElement.style.setProperty("--header-color", CONFIG.colors.header);
       document.documentElement.style.setProperty("--primary-color", CONFIG.colors.primary);
+    }
+    if (lga === "goldcoast" && document.getElementById("favicon")) {
+      document.getElementById("favicon").href = "favicon-gc.svg";
     }
     if (tagline) tagline.textContent = CONFIG.tagline;
   });
@@ -439,7 +439,7 @@ function getModeLabel(mode) {
 
 function hasPlanningMismatch(props) {
   const band = getPTALBand(props.ptal, props.total_capacity);
-  const zone = props[CONFIG.fields?.zone || "Zone_code"];
+  const zone = props[CONFIG.fields && CONFIG.fields.zone || "Zone_code"];
   const maxStoreys = Number(props.max_storeys);
   
   // Only check 4A/4B
@@ -453,8 +453,8 @@ function hasPlanningMismatch(props) {
 }
 
 function hasFloodConstraint(props) {
-  const flood = props[CONFIG.fields?.flood || "fpa_code"];
-  return (CONFIG.fields?.floodValues || ["FPA1", "FPA2A", "FPA2B", "FPA3"]).includes(flood);
+  const flood = props[CONFIG.fields && CONFIG.fields.flood || "fpa_code"];
+  return (CONFIG.fields && CONFIG.fields.floodValues || ["FPA1", "FPA2A", "FPA2B", "FPA3"]).includes(flood);
 }
 
 function hasParkingMismatch(props) {
@@ -477,7 +477,7 @@ function hasTransitGap(props) {
 }
 
 function isGreenSpace(props) {
-  const z = String(props[CONFIG.fields?.zone || "Zone_code"] || "").trim().toUpperCase();
+  const z = String(props[CONFIG.fields && CONFIG.fields.zone || "Zone_code"] || "").trim().toUpperCase();
   return z === "CN" || z === "OS" || z === "SR" || z === "RU" || z === "RR" || z === "SP";
 }
 
@@ -592,7 +592,7 @@ function onEachFeature(feature, layer) {
     );
   } else if (flood) {
     layer.bindTooltip(
-      `Flood constraint (${props[CONFIG.fields?.flood || "fpa_code"]})<br>Click for details`,
+      `Flood constraint (${props[CONFIG.fields && CONFIG.fields.flood || "fpa_code"]})<br>Click for details`,
       { sticky: true, opacity: 0.9 }
     );
   }
@@ -709,7 +709,7 @@ function showInfo(e) {
     gridLink.title = "Shareable link to this cell";
 }
   
-  setText("zone-code", (props[CONFIG.fields?.zone || "Zone_code"] === "UNK" ? "Unknown" : props[CONFIG.fields?.zone || "Zone_code"]) || "Unknown");
+  setText("zone-code", (props[CONFIG.fields && CONFIG.fields.zone || "Zone_code"] === "UNK" ? "Unknown" : props[CONFIG.fields && CONFIG.fields.zone || "Zone_code"]) || "Unknown");
   setHTML("recommended-height", getRecommendedHeight(ptal, total_capacity));
   
   const maxStoreys = Number(props.max_storeys);
@@ -747,7 +747,7 @@ function showInfo(e) {
   const transitGap = hasTransitGap(props);
   const parking = hasParkingMismatch(props);
   
-  showEl("planning-controls", !(props[CONFIG.fields?.flood || "fpa_code"] === "FPA1"));
+  showEl("planning-controls", !(props[CONFIG.fields && CONFIG.fields.flood || "fpa_code"] === "FPA1"));
   showEl("planning-mismatch-warning", planningMismatch);
   showEl("transit-gap-warning", transitGap);
   showEl("flood-explainer", flood);
@@ -756,7 +756,7 @@ function showInfo(e) {
   showEl("parking-badge", false);
 
   if (flood) {
-    setText("flood-badge", `🌊 ${props[CONFIG.fields?.flood || "fpa_code"]}`);
+    setText("flood-badge", `🌊 ${props[CONFIG.fields && CONFIG.fields.flood || "fpa_code"]}`);
   }
 
   const stopsList = $("nearby-stops");
