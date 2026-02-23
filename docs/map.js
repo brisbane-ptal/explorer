@@ -1,8 +1,8 @@
 /* =========================================================
-   Brisbane PTAL Explorer — map.js (v0.9.2)
+   PETAL Explorer — map.js (v0.9.3)
    ========================================================= */
 
-const APP_VERSION = "v0.9.2";  // ← Increment this after running pipeline
+const APP_VERSION = "v0.9.3";  // ← Increment this after running pipeline
 
 // Auto-detect LGA from subdomain
 const hostname = window.location.hostname;
@@ -20,14 +20,14 @@ const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 
    
 const ALPHA_CONFIGS = {
   logan: {
-    name: 'Logan PTAL Explorer (Alpha)',
+    name: 'Logan PETAL Explorer (Alpha)',
     tagline: 'Mapping public transport accessibility across Logan City',
     center: [-27.6394, 153.1079],
     zoom: 12, 
     dataFile: 'logan_ptal_final.geojson.gz',
   },
   goldcoast: {
-    name: 'Gold Coast PTAL Explorer (Alpha)',
+    name: 'Gold Coast PETAL Explorer',
     tagline: 'Mapping public transport accessibility on the Gold Coast',
     center: [-28.0023, 153.4145],
     zoom: 12, 
@@ -43,28 +43,28 @@ const ALPHA_CONFIGS = {
     },
   },
   ipswich: {
-    name: 'Ipswich PTAL Explorer (Alpha)',
+    name: 'Ipswich PETAL Explorer (Alpha)',
     tagline: 'Mapping public transport accessibility in Ipswich',
     center: [-27.6122, 152.7612],
     zoom: 12, 
     dataFile: 'ipswich_ptal_final.geojson.gz',
   },
   moreton: {
-    name: 'Moreton Bay PTAL Explorer (Alpha)',
+    name: 'Moreton Bay PETAL Explorer (Alpha)',
     tagline: 'Mapping public transport accessibility in Moreton Bay Region',
     center: [-27.3036, 152.9614],
     zoom: 12,  
     dataFile: 'moreton_ptal_final.geojson.gz',
   },
   redland: {
-    name: 'Redland PTAL Explorer (Alpha)',
+    name: 'Redland PETAL Explorer (Alpha)',
     tagline: 'Mapping public transport accessibility in Redland',
     center: [-27.5294, 153.2528],
     zoom: 12,  
     dataFile: 'redland_ptal_final.geojson.gz',
   },
   sunshinecoast: {
-    name: 'Sunshine Coast PTAL Explorer (Alpha)',
+    name: 'Sunshine Coast PETAL Explorer (Alpha)',
     tagline: 'Mapping public transport accessibility on the Sunshine Coast',
     center: [-26.6566, 153.0897],
     zoom: 12,  
@@ -79,7 +79,7 @@ const isAlpha = lga && ALPHA_CONFIGS[lga];
 // Override config if alpha LGA requested
 const CONFIG = isAlpha ? ALPHA_CONFIGS[lga] : {
 
-  name: 'Brisbane PTAL Explorer',
+  name: 'Brisbane PETAL Explorer',
   center: [-27.4650, 153.0242],
   zoom: 15,
   dataFile: 'brisbane_ptal_final.geojson.gz'
