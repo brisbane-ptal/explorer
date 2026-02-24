@@ -469,3 +469,38 @@ body.embed #legend-burger {
 body.embed #info-panel {
   max-height: 90%;
 }
+/* Region Switcher */
+.region-switcher {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.region-switcher a {
+  color: inherit;
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.region-switcher a:hover,
+.region-switcher a.active {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.region-switcher .separator {
+  opacity: 0.5;
+  margin: 0 0.5rem;
+}
+
+/* Gold Coast button override */
+body[data-region="goldcoast"] #search-btn {
+  background-color: #00A8B5;
+  color: white;
+}
+
+body[data-region="goldcoast"] #search-btn:hover {
+  background-color: #008A94;
+}
