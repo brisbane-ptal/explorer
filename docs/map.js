@@ -1,22 +1,24 @@
 /* =========================================================
-   PETAL Explorer — map.js (v0.9.3)
+   PETAL Explorer — map.js (v0.9.4)
    ========================================================= */
 
-const APP_VERSION = "v0.9.3";  // ← Increment this after running pipeline
+const APP_VERSION = "v0.9.4";
 
-const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
+const PTAL_THRESHOLDS_TEXT = "PETAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
    
-const ALPHA_CONFIGS = {
-  logan: {
-    name: 'Logan PETAL Explorer (Alpha)',
-    tagline: 'Mapping public transport accessibility across Logan City',
-    center: [-27.6394, 153.1079],
-    zoom: 12, 
-    dataFile: 'logan_ptal_final.geojson.gz',
+const REGIONS = {
+  brisbane: {
+    name: 'Brisbane PETAL Explorer',
+    tagline: 'Mapping public transport accessibility in Brisbane',
+    council: 'Brisbane City Council',
+    center: [-27.4650, 153.0242],
+    zoom: 15,
+    dataFile: 'brisbane_ptal_final.geojson.gz',
   },
   goldcoast: {
     name: 'Gold Coast PETAL Explorer',
     tagline: 'Mapping public transport accessibility on the Gold Coast',
+    council: 'City of Gold Coast',
     center: [-28.0023, 153.4145],
     zoom: 12, 
     dataFile: "goldcoast_ptal_final.geojson.gz",
@@ -30,30 +32,42 @@ const ALPHA_CONFIGS = {
       header: "#00A8B5"
     },
   },
+  logan: {
+    name: 'Logan PETAL Explorer',
+    tagline: 'Mapping public transport accessibility across Logan City',
+    council: 'Logan City Council',
+    center: [-27.6394, 153.1079],
+    zoom: 12, 
+    dataFile: 'logan_ptal_final.geojson.gz',
+  },
   ipswich: {
-    name: 'Ipswich PETAL Explorer (Alpha)',
+    name: 'Ipswich PETAL Explorer',
     tagline: 'Mapping public transport accessibility in Ipswich',
+    council: 'Ipswich City Council',
     center: [-27.6122, 152.7612],
     zoom: 12, 
     dataFile: 'ipswich_ptal_final.geojson.gz',
   },
   moreton: {
-    name: 'Moreton Bay PETAL Explorer (Alpha)',
+    name: 'Moreton Bay PETAL Explorer',
     tagline: 'Mapping public transport accessibility in Moreton Bay Region',
+    council: 'Moreton Bay Regional Council',
     center: [-27.3036, 152.9614],
     zoom: 12,  
     dataFile: 'moreton_ptal_final.geojson.gz',
   },
   redland: {
-    name: 'Redland PETAL Explorer (Alpha)',
+    name: 'Redland PETAL Explorer',
     tagline: 'Mapping public transport accessibility in Redland',
+    council: 'Redland City Council',
     center: [-27.5294, 153.2528],
     zoom: 12,  
     dataFile: 'redland_ptal_final.geojson.gz',
   },
   sunshinecoast: {
-    name: 'Sunshine Coast PETAL Explorer (Alpha)',
+    name: 'Sunshine Coast PETAL Explorer',
     tagline: 'Mapping public transport accessibility on the Sunshine Coast',
+    council: 'Sunshine Coast Council',
     center: [-26.6566, 153.0897],
     zoom: 12,  
     dataFile: 'sunshinecoast_ptal_final.geojson.gz',
@@ -61,50 +75,57 @@ const ALPHA_CONFIGS = {
 };
 
 function detectRegion() {
-  const hostname = window.location.hostname;
-  if (hostname === 'bne.petalexplorer.org') return 'brisbane';
-  if (hostname === 'gc.petalexplorer.org') return 'goldcoast';
   const params = new URLSearchParams(window.location.search);
   const lga = params.get('lga');
-  if (lga) return lga;
+  if (lga && REGIONS[lga]) return lga;
   return 'brisbane';
 }
+
 const lga = detectRegion();
-const isAlpha = lga && ALPHA_CONFIGS[lga];
+const CONFIG = REGIONS[lga] || REGIONS.brisbane;
 
-// Override config if alpha LGA requested
-const CONFIG = isAlpha ? ALPHA_CONFIGS[lga] : {
-
-  name: 'Brisbane PETAL Explorer',
-  center: [-27.4650, 153.0242],
-  zoom: 15,
-  dataFile: 'brisbane_ptal_final.geojson.gz'
-};
-
-// Update page for alpha LGAs
-if (isAlpha) {
-  document.addEventListener('DOMContentLoaded', () => {
-    document.title = `${CONFIG.name} - Public Transport Accessibility`;
-    const h1 = document.querySelector('header h1');
-    const tagline = document.querySelector('header p');
-    if (h1) h1.textContent = CONFIG.name;
-    if (CONFIG.colors) {
-      document.documentElement.style.setProperty("--header-color", CONFIG.colors.header);
-      document.documentElement.style.setProperty("--primary-color", CONFIG.colors.primary);
+function updateRegionUI() {
+  document.body.setAttribute('data-region', lga);
+  
+  const councilNameEl = document.getElementById('council-name');
+  if (councilNameEl && CONFIG.council) {
+    councilNameEl.textContent = CONFIG.council;
+  }
+  
+  const links = {
+    'brisbane': document.getElementById('link-brisbane'),
+    'goldcoast': document.getElementById('link-goldcoast')
+  };
+  
+  Object.keys(links).forEach(key => {
+    const link = links[key];
+    if (link) {
+      if (key === lga) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
     }
-    if (lga === "goldcoast" && document.getElementById("favicon")) {
-      document.getElementById("favicon").href = "favicon-gc.svg";
-    }
-    if (tagline) tagline.textContent = CONFIG.tagline;
   });
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  document.title = `${CONFIG.name} - Public Transport Accessibility`;
+  const h1 = document.querySelector('header h1');
+  const tagline = document.querySelector('header p');
+  if (h1) h1.textContent = CONFIG.name;
+  if (CONFIG.colors) {
+    document.documentElement.style.setProperty("--header-color", CONFIG.colors.header);
+    document.documentElement.style.setProperty("--primary-color", CONFIG.colors.primary);
+  }
+  if (lga === "goldcoast" && document.getElementById("favicon")) {
+    document.getElementById("favicon").href = "favicon-gc.svg";
+  }
+  if (tagline) tagline.textContent = CONFIG.tagline;
+  
+  updateRegionUI();
+});
 
-// Current (localhost):
-//const PTAL_GZ_URL = `brisbane_ptal_final.geojson.gz`;
-//const PTAL_JSON_URL = `brisbane_ptal_final.geojson`;
-
-// Change to (production):
 const PTAL_GZ_URL = `${CONFIG.dataFile}?v=${APP_VERSION}`;
 const PTAL_JSON_URL = `${CONFIG.dataFile.replace('.gz', '')}?v=${APP_VERSION}`;
 const IS_EMBED = new URLSearchParams(window.location.search).get("embed") === "1";
@@ -123,7 +144,7 @@ async function loadPTAL() {
       const decompressed = pako.ungzip(new Uint8Array(buffer), { to: "string" });
       data = JSON.parse(decompressed);
 
-      console.log("✓ Loaded PTAL (gz):", data?.features?.length ?? 0, "features");
+      console.log("✓ Loaded PETAL (gz):", data?.features?.length ?? 0, "features");
 
       fullData = data;
 
@@ -169,9 +190,7 @@ async function loadPTAL() {
           ptalLayer.addData({ type: "FeatureCollection", features: batch });
         }
 
-
         requestAnimationFrame(() => setTimeout(loadNextBatch, 100));
-
       }
 
       setTimeout(loadNextBatch, 600);
@@ -179,12 +198,11 @@ async function loadPTAL() {
     }
 
   } catch (err) {
-  console.error("❌ Failed to load PTAL .gz file", err);
-  alert("PTAL data failed to load. Please refresh the page.");
+  console.error("❌ Failed to load PETAL .gz file", err);
+  alert("PETAL data failed to load. Please refresh the page.");
   return;
 }
 
-  // Fallback .json
   try {
     const resJson = await fetch(PTAL_JSON_URL, {
         cache: "no-store",
@@ -193,14 +211,14 @@ async function loadPTAL() {
      
     if (resJson.ok) {
       data = await resJson.json();
-      console.log("✓ Loaded PTAL (json):", data?.features?.length ?? 0, "features");
+      console.log("✓ Loaded PETAL (json):", data?.features?.length ?? 0, "features");
       addPTALLayer(data);
       return;
     }
 
     throw new Error(`HTTP ${resJson.status}`);
   } catch (err) {
-    console.error("❌ Failed to load PTAL data:", err);
+    console.error("❌ Failed to load PETAL data:", err);
     alert("Failed to load map data. Please refresh the page.");
   }
 }
@@ -219,7 +237,6 @@ let searchMarker = null;
 
 const map = L.map("map").setView(CONFIG.center, CONFIG.zoom);
 
-
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap contributors",
   maxZoom: 18,
@@ -235,7 +252,6 @@ if (IS_EMBED) {
   document.body.classList.add("embed");
 }
 
-// PTAL color palette
 const PTAL_COLORS = {
   '4b': '#006837',
   '4a': '#1a9850',
@@ -244,18 +260,15 @@ const PTAL_COLORS = {
   '1': '#d73027'
 };
 
-// Create SVG patterns for overlays
 function createSVGPatterns() {
   const mapPane = map.getPanes().overlayPane;
   let svg = mapPane.querySelector('svg');
   
-  // If no SVG exists yet, patterns will be created after layer loads
   if (!svg) {
     console.warn('⚠️  SVG not ready, will retry after layer load');
     return false;
   }
   
-  // Don't recreate if patterns already exist
   if (svg.querySelector('defs')) {
     console.log('✓ SVG patterns already exist');
     return true;
@@ -264,34 +277,31 @@ function createSVGPatterns() {
   console.log('Creating SVG patterns...');
   const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
     
-  // 0. Flood-only clear pattern (for PTAL-null flood cells)
-    const floodClear = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-    floodClear.setAttribute('id', 'flood-clear');
-    floodClear.setAttribute('patternUnits', 'userSpaceOnUse');
-    floodClear.setAttribute('width', '10');
-    floodClear.setAttribute('height', '10');
+  const floodClear = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+  floodClear.setAttribute('id', 'flood-clear');
+  floodClear.setAttribute('patternUnits', 'userSpaceOnUse');
+  floodClear.setAttribute('width', '10');
+  floodClear.setAttribute('height', '10');
 
-    const clearRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    clearRect.setAttribute('width', '10');
-    clearRect.setAttribute('height', '10');
-    clearRect.setAttribute('fill', 'rgba(255,255,255,0.05)'); // basically clear
+  const clearRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  clearRect.setAttribute('width', '10');
+  clearRect.setAttribute('height', '10');
+  clearRect.setAttribute('fill', 'rgba(255,255,255,0.05)');
 
-    const clearLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    clearLine.setAttribute('x1', '0');
-    clearLine.setAttribute('y1', '10');
-    clearLine.setAttribute('x2', '10');
-    clearLine.setAttribute('y2', '0');
-    clearLine.setAttribute('stroke', 'rgba(0, 80, 150, 0.8)');
-    clearLine.setAttribute('stroke-width', '3');
+  const clearLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  clearLine.setAttribute('x1', '0');
+  clearLine.setAttribute('y1', '10');
+  clearLine.setAttribute('x2', '10');
+  clearLine.setAttribute('y2', '0');
+  clearLine.setAttribute('stroke', 'rgba(0, 80, 150, 0.8)');
+  clearLine.setAttribute('stroke-width', '3');
 
-    floodClear.appendChild(clearRect);
-    floodClear.appendChild(clearLine);
-    defs.appendChild(floodClear);
+  floodClear.appendChild(clearRect);
+  floodClear.appendChild(clearLine);
+  defs.appendChild(floodClear);
 
-  // Create 15 patterns: 5 PTAL levels × 3 overlay states
   Object.entries(PTAL_COLORS).forEach(([band, color]) => {  
   
-    // 1. Flood only (blue diagonal)
     const floodPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
     floodPattern.setAttribute('id', `flood-ptal${band}`);
     floodPattern.setAttribute('patternUnits', 'userSpaceOnUse');
@@ -315,7 +325,6 @@ function createSVGPatterns() {
     floodPattern.appendChild(floodLine);
     defs.appendChild(floodPattern);
     
-    // 2. Parking only (orange diagonal)
     const parkingPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
     parkingPattern.setAttribute('id', `parking-ptal${band}`);
     parkingPattern.setAttribute('patternUnits', 'userSpaceOnUse');
@@ -339,7 +348,6 @@ function createSVGPatterns() {
     parkingPattern.appendChild(parkingLine);
     defs.appendChild(parkingPattern);
     
-    // 3. Both overlays (crosshatch)
     const bothPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
     bothPattern.setAttribute('id', `flood-parking-ptal${band}`);
     bothPattern.setAttribute('patternUnits', 'userSpaceOnUse');
@@ -438,13 +446,10 @@ function hasPlanningMismatch(props) {
   const zone = props[CONFIG.fields && CONFIG.fields.zone || "Zone_code"];
   const maxStoreys = Number(props.max_storeys);
   
-  // Only check 4A/4B
   if (band !== "4A" && band !== "4B") return false;
   
-  // Define recommended minimums
   const minStoreys = band === "4B" ? 30 : 16;
   
-  // Flag if current max is below recommended minimum
   return Number.isFinite(maxStoreys) && maxStoreys < minStoreys;
 }
 
@@ -457,10 +462,8 @@ function hasParkingMismatch(props) {
   const ptal = Number(props.ptal);
   const parkingZone = String(props.parking_zone);
   
-  // Only show for PTAL 3+ (good transit supports lower parking)
   if (ptal < 3) return false;
   
-  // Exclude city core, but INCLUDE city frame
   const isCityCore = parkingZone === "334" || parkingZone === "334.0";
   
   return props.parking_mismatch === true && !isCityCore;
@@ -468,7 +471,6 @@ function hasParkingMismatch(props) {
 
 function hasTransitGap(props) {
   const ptal = Number(props.ptal);
-  // Only show PTAL 1 cells with transit gap
   return ptal === 1 && props.transit_gap === true;
 }
 
@@ -491,23 +493,20 @@ function style(feature) {
   const planningMismatch = hasPlanningMismatch(props);
   const transitGap = hasTransitGap(props);
   
-  // Hide if OS/CN/SR Zoning
   if (hideGreenSpace && isGreenSpace(props)) {
     return { fillOpacity: 0, opacity: 0, stroke: false };
   }
-  // Hide only if PTAL invalid AND not a flood constraint
+
   const ptalValid = Number.isFinite(ptalNum) && ptalNum > 0;
   if (!ptalValid && !flood) {
     return { fillOpacity: 0, opacity: 0, stroke: false };
   }
   const ptalNullFlood = !ptalValid && flood;
   
-  // When mismatch filter active, hide non-mismatch cells
   if (showMismatchesOnly && !planningMismatch && !transitGap) {
     return { fillOpacity: 0, opacity: 0, stroke: false };
   }
 
-  // Default border
   let borderColor = "white";
   const zoom = map.getZoom();
   let borderWeight = zoom >= 13 ? 1 : 0.5;
@@ -520,16 +519,13 @@ function style(feature) {
     borderWeight = 2;
   }
 
-  // Band + safe fallbacks for PTAL-null flood cells
   const bandStr = getPTALBand(ptalNum, capNum);
   const bandKey = bandStr ? bandStr.toLowerCase() : "1";
 
-  // Base fill: safe even when PTAL null
   let fillColor = ptalNullFlood
-  ? "rgba(255,255,255,0.05)"      // clear-ish base for PTAL-null flood cells
+  ? "rgba(255,255,255,0.05)"
   : ((bandStr && PTAL_COLORS[bandKey]) ? PTAL_COLORS[bandKey] : PTAL_COLORS["1"]);
   
-  // Overlay patterns override base fill
   if (showFloodOverlay && flood && showParkingOverlay && parking) {
     fillColor = `url(#flood-parking-ptal${bandKey})`;
   } else if (showFloodOverlay && flood) {
@@ -583,7 +579,7 @@ function onEachFeature(feature, layer) {
   if (hasValidPTAL) {
     const label = getPTALLabel(ptal, total_capacity);
     layer.bindTooltip(
-      `PTAL ${band} (${label})<br>Click for details`,
+      `PETAL ${band} (${label})<br>Click for details`,
       { sticky: true, opacity: 0.9 }
     );
   } else if (flood) {
@@ -625,14 +621,12 @@ function showInfo(e) {
   const flood = hasFloodConstraint(props);
   const hasValidPTAL = Number.isFinite(ptal) && ptal > 0;
 
-  // Allow clicks on flood-only (PTAL null) cells so panel opens
   if (!hasValidPTAL && !flood) return;
 
   const band = getPTALBand(ptal, total_capacity);
   const gridId = props.id || "Unknown";
   const capacity = props.total_capacity;
   
-  // Format grid ID
   const gridMatch = gridId.match(/r([+-]?\d+)_c([+-]?\d+)/);
   let displayId = gridId;
 
@@ -640,19 +634,16 @@ function showInfo(e) {
     const row = parseInt(gridMatch[1]);
     const col = parseInt(gridMatch[2]);
   
-    // Use row sign for letter position, col sign for number direction
     const letterIndex = Math.abs(row);
     const letter = String.fromCharCode(65 + letterIndex);
     const number = Math.abs(col);
   
-    // Add prefixes for negative values
-    const rowPrefix = row < 0 ? 'S' : 'N';  // South/North
-    const colPrefix = col < 0 ? 'W' : 'E';  // West/East
+    const rowPrefix = row < 0 ? 'S' : 'N';
+    const colPrefix = col < 0 ? 'W' : 'E';
   
     displayId = `${rowPrefix}${letter}${colPrefix}${number}`;
   }
   
-  // Set PTAL with capacity
   const categoryEl = document.getElementById("category-label");
 
   if (hasValidPTAL) {
@@ -660,7 +651,6 @@ function showInfo(e) {
     const label = getPTALLabel(ptal, total_capacity);
     setText("category-label", label);
   
-    // Style based on PTAL band
     if (categoryEl) {
       const colors = {
         'Excellent': { bg: '#006837', text: '#fff' },
@@ -684,7 +674,6 @@ function showInfo(e) {
     setText("ptal-score", "not assessed - River / Creek");
     setText("category-label", "Flood constrained area");
   
-    // Gray styling for flood cells
     if (categoryEl) {
       categoryEl.style.background = '#e0e0e0';
       categoryEl.style.color = '#666';
@@ -697,7 +686,6 @@ function showInfo(e) {
     }
   }
    
-  // Set grid link
   const gridLink = $("grid-id-link");
   if (gridLink) {
     gridLink.innerHTML = `${displayId} <span style="font-size:0.8em;">🔗</span>`;
@@ -717,13 +705,11 @@ function showInfo(e) {
         : "Unknown";
   setHTML("max-height", heightDisplay);
 
-  // Show parking rates with defaults for Unknown zones in city core/frame
   let bccParking = props.bcc_parking;
   const ptalParking = props.ptal_parking;
   
-    // Show parking zone
   const parkingZone = props.parking_zone;
-  let zoneLabel = "General"; // default
+  let zoneLabel = "General";
   
   if (parkingZone === "334" || parkingZone === "334.0") {
     zoneLabel = "City Core";
@@ -816,10 +802,8 @@ function addPTALLayer(data) {
   ptalData = data;
   ptalLayer = L.geoJSON(data, { style, onEachFeature }).addTo(map);
 
-  // CRITICAL: Create patterns AFTER layer is added
   createSVGPatterns();
 
-// Cell deep-linking
 const urlParams = new URLSearchParams(window.location.search);
 const cellId = urlParams.get('cell');
 if (cellId && ptalLayer) {
@@ -829,31 +813,26 @@ if (cellId && ptalLayer) {
       if (layer.feature?.properties?.id === cellId) {
         found = true;
         
-        // Zoom to show the cell with context (padding shows ~3-5 surrounding cells)
         const bounds = layer.getBounds();
         map.fitBounds(bounds, {
-          padding: [150, 150],  // Shows surrounding context
-          maxZoom: 17           // Close enough to see detail, not too tight
+          padding: [150, 150],
+          maxZoom: 17
         });
         
-        // Apply standard click highlight (persistent white border)
         highlightFeature({ target: layer });
         
-        // Open tooltip and info panel
         layer.openTooltip();
         setTimeout(() => showInfo({ target: layer }), 300);
       }
     });
-    if (!found) setTimeout(attemptZoom, 1000);  // Retry until outer cells load
+    if (!found) setTimeout(attemptZoom, 1000);
   };
   attemptZoom();
 } else {
-  // Only fit to full bounds if NOT deep linking
   try { if (!innerDataLoaded) { map.fitBounds(ptalLayer.getBounds()); } } catch (_) {}
 }
 }
 
-// Legend controls (runs at page load, not inside addPTALLayer)
 const legend = $("legend");
 const burger = $("legend-burger");
 const legendToggle = $("legend-toggle");
@@ -870,7 +849,6 @@ if (burger && legend) {
     if (window.innerWidth <= 768) legend.classList.remove("open");
   });
 }
-
 
 if (legendToggle && legendContent && legend) {
   if (window.innerWidth > 768) {
@@ -1001,9 +979,6 @@ if (infoPanel) {
 
 loadPTAL();
 
-// ---------------------------------------------------------
-// Footer email (lightly obfuscated to avoid scraping)
-// ---------------------------------------------------------
 (function () {
   const user = "brisbaneptal";
   const domain = "gmail.com";
