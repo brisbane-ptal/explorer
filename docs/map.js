@@ -4,18 +4,6 @@
 
 const APP_VERSION = "v0.9.3";  // ← Increment this after running pipeline
 
-// Auto-detect LGA from subdomain
-const hostname = window.location.hostname;
-if (hostname === "gc.petalexplorer.org" || hostname === "goldcoast.petalexplorer.org") {
-  if (!window.location.search.includes("lga=")) {
-    window.location.search = "?lga=goldcoast";
-  }
-} else if (hostname === "bne.petalexplorer.org" || hostname === "brisbane.petalexplorer.org") {
-  if (!window.location.search.includes("lga=")) {
-    window.location.search = "?lga=brisbane";
-  }
-}
-
 const PTAL_THRESHOLDS_TEXT = "PTAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
    
 const ALPHA_CONFIGS = {
@@ -72,8 +60,16 @@ const ALPHA_CONFIGS = {
   }
 };
 
-const urlParams = new URLSearchParams(window.location.search);
-const lga = urlParams.get('lga');
+function detectRegion() {
+  const hostname = window.location.hostname;
+  if (hostname === 'bne.petalexplorer.org') return 'brisbane';
+  if (hostname === 'gc.petalexplorer.org') return 'goldcoast';
+  const params = new URLSearchParams(window.location.search);
+  const lga = params.get('lga');
+  if (lga) return lga;
+  return 'brisbane';
+}
+const lga = detectRegion();
 const isAlpha = lga && ALPHA_CONFIGS[lga];
 
 // Override config if alpha LGA requested
