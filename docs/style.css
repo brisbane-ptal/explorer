@@ -19,11 +19,10 @@ body{
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color:#333;
   background:#fff;
-  display: flex;           /* ADD */
-  flex-direction: column;  /* ADD */
-  min-height: 100vh;       /* ADD */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
-
 
 a { color: var(--brisbane-blue); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -110,10 +109,9 @@ header p{
    ============================== */
 #map{
   flex: 1;
-  min-height: 400px; /* Fallback for Leaflet initialization */
-  height: 100%;      /* Fill flex container */
+  min-height: 400px;
+  height: 100%;
 }
-
 
 /* ==============================
    Desktop panels (legend + info)
@@ -184,7 +182,7 @@ header p{
 .ptal-2{ background:#fee08b; }
 .ptal-1{ background:#d73027; }
 
-/* SVG overlay patterns - target path elements with composite pattern classes */
+/* SVG overlay patterns */
 path.flood-ptal4b,
 path.flood-ptal4a,
 path.flood-ptal3,
@@ -193,7 +191,6 @@ path.flood-ptal1 {
   fill: url(#flood-ptal4b) !important;
 }
 
-/* SVG overlay patterns - target child path elements */
 .flood-ptal4b path { fill: url(#flood-ptal4b) !important; }
 .flood-ptal4a path { fill: url(#flood-ptal4a) !important; }
 .flood-ptal3 path { fill: url(#flood-ptal3) !important; }
@@ -230,11 +227,10 @@ path.flood-ptal1 {
   cursor: pointer;
 }
 
-/* Info panel desktop - SMALLER */
 #info-panel{
   position: absolute;
   top: 190px;
-  left: 16px;  /* Was on right, move back to left */
+  left: 16px;
   width: 320px;
   max-height: calc(100vh - 250px);
   z-index: calc(var(--z-panel) + 1);
@@ -354,6 +350,42 @@ footer .disclaimer strong{
   color: #333;
 }
 
+/* Region Switcher */
+.region-switcher {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.region-switcher a {
+  color: inherit;
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.region-switcher a:hover,
+.region-switcher a.active {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.region-switcher .separator {
+  opacity: 0.5;
+  margin: 0 0.5rem;
+}
+
+/* Gold Coast button override */
+body[data-region="goldcoast"] #search-btn {
+  background-color: #00A8B5;
+  color: white;
+}
+
+body[data-region="goldcoast"] #search-btn:hover {
+  background-color: #008A94;
+}
+
 /* ==============================
    Mobile layout
    ============================== */
@@ -395,7 +427,7 @@ footer .disclaimer strong{
 
   #map{
     height: calc(100svh - 190px);
-    height: calc(100vh - 190px); /* fallback */
+    height: calc(100vh - 190px);
   }
 
   #info-panel{
@@ -441,66 +473,26 @@ footer .disclaimer strong{
 /* ================================
    Embed mode
    ================================ */
-
 body.embed header,
 body.embed footer {
   display: none !important;
 }
 
-/* Remove extra top spacing caused by header */
 body.embed {
   padding-top: 0;
 }
 
-/* Lock map height for embeds */
 body.embed #map {
    flex: none;
-   height: 650px;          /* matches iframe default */
+   height: 650px;
   max-height: 650px;
 }
 
-/* Optional: simplify UI chrome */
 body.embed #legend,
 body.embed #legend-burger {
   display: none !important;
 }
 
-/* Info panel still allowed */
 body.embed #info-panel {
   max-height: 90%;
-}
-/* Region Switcher */
-.region-switcher {
-  margin-top: 1rem;
-  text-align: center;
-  font-size: 0.9rem;
-}
-
-.region-switcher a {
-  color: inherit;
-  text-decoration: none;
-  padding: 0.25rem 0.5rem;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.region-switcher a:hover,
-.region-switcher a.active {
-  opacity: 1;
-  text-decoration: underline;
-}
-
-.region-switcher .separator {
-  opacity: 0.5;
-  margin: 0 0.5rem;
-}
-
-/* Gold Coast button override */
-body[data-region="goldcoast"] #search-btn {
-  background-color: #00A8B5;
-  color: white;
-}
-
-body[data-region="goldcoast"] #search-btn:hover {
-  background-color: #008A94;
 }
