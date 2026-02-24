@@ -92,7 +92,7 @@ function updateRegionUI() {
     councilNameEl.textContent = CONFIG.council;
   }
   
-  // Update both footer and header links
+  // Update links
   const links = {
     'brisbane': document.getElementById('link-brisbane-header'),
     'goldcoast': document.getElementById('link-goldcoast-header')
