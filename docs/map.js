@@ -78,6 +78,14 @@ function detectRegion() {
   const params = new URLSearchParams(window.location.search);
   const lga = params.get('lga');
   if (lga && REGIONS[lga]) return lga;
+  
+  // Check cell ID for region prefix
+  const cellId = params.get('cell');
+  if (cellId) {
+    if (cellId.startsWith('GCCC_')) return 'goldcoast';
+    // Add other region prefixes here if needed
+  }
+  
   return 'brisbane';
 }
 
