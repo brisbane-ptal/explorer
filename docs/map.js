@@ -99,15 +99,14 @@ function updateRegionUI() {
   };
   
   Object.keys(links).forEach(key => {
-    links[key].forEach(link => {
-      if (link) {
-        if (key === lga) {
-          link.classList.add('active');
-        } else {
-          link.classList.remove('active');
-        }
+    const link = links[key];
+    if (link) {
+      if (key === lga) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
       }
-    });
+    }
   });
 }
 
