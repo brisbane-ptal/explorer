@@ -811,7 +811,10 @@ function addPTALLayer(data) {
   createSVGPatterns();
 
 const urlParams = new URLSearchParams(window.location.search);
-const cellId = urlParams.get('cell');
+let cellId = urlParams.get('cell');
+if (cellId) {
+  cellId = cellId.replace(/\s+/g, '+');
+}
 if (cellId && ptalLayer) {
   const attemptZoom = () => {
     let found = false;
