@@ -92,20 +92,22 @@ function updateRegionUI() {
     councilNameEl.textContent = CONFIG.council;
   }
   
+  // Update both footer and header links
   const links = {
-    'brisbane': document.getElementById('link-brisbane'),
-    'goldcoast': document.getElementById('link-goldcoast')
+    'brisbane': document.getElementById('link-brisbane-header'),
+    'goldcoast': document.getElementById('link-goldcoast-header')
   };
   
   Object.keys(links).forEach(key => {
-    const link = links[key];
-    if (link) {
-      if (key === lga) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
+    links[key].forEach(link => {
+      if (link) {
+        if (key === lga) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
       }
-    }
+    });
   });
 }
 
@@ -118,8 +120,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.documentElement.style.setProperty("--header-color", CONFIG.colors.header);
     document.documentElement.style.setProperty("--primary-color", CONFIG.colors.primary);
   }
-  if (lga === "goldcoast" && document.getElementById("favicon")) {
-    document.getElementById("favicon").href = "favicon-gc.svg";
+  const faviconEl = document.getElementById("favicon");
+  if (faviconEl) {
+    if (lga === "goldcoast") {
+      faviconEl.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2300A8B5'/><text x='50' y='65' font-size='40' font-weight='bold' text-anchor='middle' fill='white'>GC</text></svg>";
+    } else {
+      faviconEl.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230052A5'/><text x='50' y='65' font-size='50' font-weight='bold' text-anchor='middle' fill='%23FDB913'>B</text></svg>";
+    }
   }
   if (tagline) tagline.textContent = CONFIG.tagline;
   
