@@ -106,25 +106,27 @@ header p{
 
 .region-switcher-header {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 }
 
 .region-switcher-header a {
-  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
   text-decoration: none;
-  opacity: 0.5;
+  opacity: 0.6;
   transition: opacity 0.2s, transform 0.2s;
 }
 
 .region-switcher-header a:hover {
-  opacity: 0.8;
-  transform: scale(1.1);
+  opacity: 0.85;
+  transform: scale(1.05);
 }
 
 .region-switcher-header a.active {
   opacity: 1;
-  transform: scale(1.2);
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.6));
 }
 /* ==============================
    Map
