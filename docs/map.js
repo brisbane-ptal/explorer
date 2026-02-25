@@ -1,8 +1,8 @@
 /* =========================================================
-   PETAL Explorer — map.js (v0.9.4)
+   PETAL Explorer — map.js (v0.9.5)
    ========================================================= */
 
-const APP_VERSION = "v0.9.4";
+const APP_VERSION = "v0.9.5";
 
 const PTAL_THRESHOLDS_TEXT = "PETAL: 1 <10 · 2 ≥10 · 3 ≥50 · 4A ≥120 · 4B ≥240";
    
