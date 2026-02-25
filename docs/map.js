@@ -934,13 +934,19 @@ async function searchAddress() {
   const address = (searchInput?.value || "").trim();
   if (!address) return;
 
-  const searchQuery = address.toLowerCase().includes("brisbane")
-    ? address
-    : `${address}, Brisbane, Queensland, Australia`;
+  // SET BOUNDS FOR CURRENT REGION
+  const bounds = lga === 'goldcoast'
+    ? '153.3,-28.2,153.5,-27.9'  // viewbox for Gold Coast (west,south,east,north)
+    : lga === 'brisbane'
+    ? '152.7,-27.7,153.3,-27.2'  // viewbox for Brisbane
+    : '152.5,-28.5,153.6,-26.5';  // wider SEQ fallback
 
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("format", "json");
-  url.searchParams.set("q", searchQuery);
+  url.searchParams.set("q", address); 
+  url.searchParams.set("viewbox", bounds);     
+  url.searchParams.set("bounded", "1");        
+  url.searchParams.set("countrycodes", "au");  
   url.searchParams.set("limit", "1");
 
   if (NOMINATIM_EMAIL) url.searchParams.set("email", NOMINATIM_EMAIL);
