@@ -81,7 +81,7 @@ Not all services deliver equivalent accessibility. A six-car train carries 9× t
 |----------------------------|---------------|---------------|
 |6-car train                 |450            |9.0×           |
 |G:link light rail           |250            |5.0×           |
-|Brisbane Metro              |150            |3.0×           |
+|Bi-articulated Bus (Brisbane Metro)              |150            |3.0×           |
 |Articulated bus (CityGlider)|75             |1.5×           |
 |Standard bus                |50             |1.0× (baseline)|
 |CityCat                     |170            |3.4×           |
