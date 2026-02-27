@@ -7,7 +7,7 @@
 ## Table of Contents
 
 1. [Purpose](#purpose)
-1. [What PTAL measures (and what it doesn’t)](#what-ptal-measures-and-what-it-doesnt)
+1. [What PETAL measures (and what it doesn’t)](#what-petal-measures-and-what-it-doesnt)
 1. [Methodology overview](#methodology-overview)
    1. [Capacity weighting by vehicle type](#1-capacity-weighting-by-vehicle-type)
    1. [Reliability adjustments](#2-reliability-adjustments)
@@ -35,7 +35,7 @@
 
 ## Purpose
 
-This tool maps public transport accessibility across inner Brisbane using a modified Public Transport Accessibility Level (PTAL) methodology. It measures how easily residents can access frequent, reliable public transport during peak periods. The tool currently covers Brisbane (15km radius from CBD) and Gold Coast (LGA boundaries).
+This tool maps public transport accessibility across inner Brisbane using a modified Public Enhanced Transport Accessibility Level (PETAL) methodology. It measures how easily residents can access frequent, reliable public transport during peak periods. The tool currently covers Brisbane (15km radius from CBD) and Gold Coast (LGA boundaries).
 
 The analysis is designed to inform discussions about:
 
