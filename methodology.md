@@ -170,19 +170,27 @@ Walking catchment distances reflect infrastructure permanence and observed passe
 
 Thresholds calibrated to Brisbane conditions based on sample locations with known accessibility characteristics.
 
-**Capacity validation through bedroom density analysis:**
+Capacity validation through bedroom density analysis:
+PETAL thresholds are calibrated to residential demand within 800m catchments (2.01 km² total, 1.51 km² developable at 75%). Per 1,000m² site: 50% site cover = 500m² floor plate, 80% efficiency = 400m² usable, 4× 2-bedroom apartments at 2.5 people per apartment = 10 people per storey. At 50% redevelopment rate, 1.51 km² developable area provides 755 redeveloped sites, yielding catchment populations of 755 sites × 10 people/storey × height.
 
-PETAL thresholds are calibrated to residential demand within 800m catchments (2.01 km² total, 1.51 km² developable at 75%). Per 1,000m² site: 50% site cover = 500m² floor plate, 80% efficiency = 400m² usable, 4× 2-bedroom apartments at 2.5 people per apartment = 10 people per storey. Assuming 50% redevelopment rate and 5.6% peak hour travel rate:
+Peak hour travel rate of 6% comprises: 
+- Work commutes: 42% employed (working age 66% × labour force participation 68% × 
+  employment rate 95%) × 13.5% peak hour concentration × 0.9 contra-flow = 5.1%
+- Education trips: 0.5% (accounts for AM share, private school buses, active transport) = 0.5%
+- 5.1% (work commutes) + 0.5% (education trips) = 5.6%
+- Rounded to 6% for conservatism
+
+Based on Queensland Household Travel Survey (TMR 2012) showing 27% of daily work trips in 7-9 AM window and Australian Census 2021 employment data.
 
 |Height    |Catchment population|Transit users          |Capacity needed|PETAL band|PETAL range|
 |----------|--------------------|-----------------------|---------------|----------|-----------|
-|3 storeys |22,600              |253 (20% mode share)   |5              |PETAL 1   |<10        |
-|8 storeys |60,300              |1,351 (40% mode share) |27             |PETAL 2   |10-49      |
-|15 storeys|113,000             |3,164 (50% mode share) |63             |PETAL 3   |50-119     |
-|30 storeys|226,000             |6,328 (50% mode share) |127            |PETAL 4A  |120-239    |
-|60 storeys|452,000             |12,656 (50% mode share)|253            |PETAL 4B  |≥240       |
+|3 storeys |22,600              |271 (20% mode share)   |5              |PETAL 1   |<10        |
+|8 storeys |60,300              |1,447 (40% mode share) |29             |PETAL 2   |10-49      |
+|15 storeys|113,000             |3,390 (50% mode share) |68             |PETAL 3   |50-119     |
+|30 storeys|226,000             |6,780 (50% mode share) |136            |PETAL 4A  |120-239    |
+|60 storeys|452,000             |13,560 (50% mode share)|271            |PETAL 4B  |≥240       |
 
-Mode share assumptions reflect urban context: 20% suburban, 40% inner-ring mixed-use (2-5km from CBD), 50% plateau for walkable TOD where trip reduction dominates.
+Mode share assumptions reflect urban context: 20% suburban, 40% inner-ring mixed-use (2-5km from CBD), 50% plateau for walkable TOD where trip reduction dominates.​​​​​​​​​​​​​​​​
 
 **7. Parking rate analysis**
 
