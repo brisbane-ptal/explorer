@@ -182,13 +182,13 @@ Peak hour travel rate of 6% comprises:
 
 Based on Queensland Household Travel Survey (TMR 2012) showing 27% of daily work trips in 7-9 AM window and Australian Census 2021 employment data.
 
-|Height    |Catchment population|Transit users          |Capacity needed|PETAL band|PETAL range|
-|----------|--------------------|-----------------------|---------------|----------|-----------|
-|3 storeys |22,600              |271 (20% mode share)   |5              |PETAL 1   |<10        |
-|8 storeys |60,300              |1,447 (40% mode share) |29             |PETAL 2   |10-49      |
-|15 storeys|113,000             |3,390 (50% mode share) |68             |PETAL 3   |50-119     |
-|30 storeys|226,000             |6,780 (50% mode share) |136            |PETAL 4A  |120-239    |
-|60 storeys|452,000             |13,560 (50% mode share)|271            |PETAL 4B  |≥240       |
+|PETAL band|Height    |Catchment population|Transit users          |Capacity needed|PETAL range|
+|----------|----------|--------------------|-----------------------|---------------|-----------|
+|PETAL 1   |3 storeys |22,600              |271 (20% mode share)   |5              |<10        |
+|PETAL 2   |8 storeys |60,300              |1,447 (40% mode share) |29             |10-49      |
+|PETAL 3   |15 storeys|113,000             |3,390 (50% mode share) |68             |50-119     |
+|PETAL 4A  |30 storeys|226,000             |6,780 (50% mode share) |136            |120-239    |
+|PETAL 4B  |60 storeys|452,000             |13,560 (50% mode share)|271            |≥240       |
 
 Mode share assumptions reflect urban context: 20% suburban, 40% inner-ring mixed-use (2-5km from CBD), 50% plateau for walkable TOD where trip reduction dominates.​​​​​​​​​​​​​​​​
 
