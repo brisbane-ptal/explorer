@@ -468,7 +468,7 @@ function hasPlanningMismatch(props) {
 }
 
 function hasFloodConstraint(props) {
-  const flood = props[CONFIG.fields && CONFIG.fields.flood || "fpa_code"];
+  const flood = props[CONFIG.fields && CONFIG.fields.flood || "flood_constraint"];
   return (CONFIG.fields && CONFIG.fields.floodValues || ["FPA1", "FPA2A", "FPA2B", "FPA3"]).includes(flood);
 }
 
