@@ -410,6 +410,16 @@ body[data-region="goldcoast"] #search-btn:hover {
   background-color: #008A94;
 }
 
+/* Perth button override */
+body[data-region="perth"] #search-btn {
+  background-color: #FFD100;
+  color: #000000;
+}
+
+body[data-region="perth"] #search-btn:hover {
+  background-color: #E5BC00;
+}
+
 /* ==============================
    Mobile layout
    ============================== */
