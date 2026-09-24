@@ -32,6 +32,19 @@ const REGIONS = {
       header: "#00A8B5"
     },
   },
+  perth: {
+    name: 'Perth PETAL Explorer',
+    tagline: 'Mapping public transport accessibility in Perth',
+    council: 'Transperth / Public Transport Authority WA',
+    operator: 'Transperth',
+    center: [-31.9512, 115.8599],
+    zoom: 12,
+    dataFile: 'perth_ptal_final.geojson.gz',
+    colors: {
+      primary: "#FFD100",
+      header: "#000000"
+    },
+  },
   logan: {
     name: 'Logan PETAL Explorer',
     tagline: 'Mapping public transport accessibility across Logan City',
@@ -99,11 +112,15 @@ function updateRegionUI() {
   if (councilNameEl && CONFIG.council) {
     councilNameEl.textContent = CONFIG.council;
   }
+   
+  const operatorEl = document.getElementById('operator-name');
+  if (operatorEl) operatorEl.textContent = CONFIG.operator || 'TransLink';
   
   // Update links
   const links = {
     'brisbane': document.getElementById('link-brisbane-header'),
-    'goldcoast': document.getElementById('link-goldcoast-header')
+    'goldcoast': document.getElementById('link-goldcoast-header'),
+    'perth': document.getElementById('link-perth-header')
   };
   
   Object.keys(links).forEach(key => {
@@ -131,6 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (faviconEl) {
     if (lga === "goldcoast") {
       faviconEl.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2300A8B5'/><text x='50' y='65' font-size='40' font-weight='bold' text-anchor='middle' fill='white'>GC</text></svg>";
+    } else if (lga === "perth") {
+      faviconEl.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23000000'/><text x='50' y='65' font-size='50' font-weight='bold' text-anchor='middle' fill='%23FFD100'>P</text></svg>";
     } else {
       faviconEl.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230052A5'/><text x='50' y='65' font-size='50' font-weight='bold' text-anchor='middle' fill='%23FDB913'>B</text></svg>";
     }
@@ -939,6 +958,8 @@ async function searchAddress() {
     ? '153.3,-28.2,153.5,-27.9'  // viewbox for Gold Coast (west,south,east,north)
     : lga === 'brisbane'
     ? '152.7,-27.7,153.3,-27.2'  // viewbox for Brisbane
+    : lga === 'perth'
+    ? '115.6,-32.2,116.1,-31.6'  // viewbox for Perth
     : '152.5,-28.5,153.6,-26.5';  // wider SEQ fallback
 
   const url = new URL("https://nominatim.openstreetmap.org/search");
