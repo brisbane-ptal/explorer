@@ -35,7 +35,7 @@ const REGIONS = {
   perth: {
     name: 'Perth PETAL Explorer',
     tagline: 'Mapping public transport accessibility in Perth',
-    council: 'Transperth / Public Transport Authority WA',
+    council: 'Public Transport Authority WA',
     operator: 'Transperth',
     center: [-31.9512, 115.8599],
     zoom: 12,
@@ -96,6 +96,7 @@ function detectRegion() {
   const cellId = params.get('cell');
   if (cellId) {
     if (cellId.startsWith('GCCC_')) return 'goldcoast';
+    if (cellId.startsWith('PTH_')) return 'perth';
     // Add other region prefixes here if needed
   }
   
