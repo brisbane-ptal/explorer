@@ -12,7 +12,7 @@ const REGIONS = {
     tagline: 'Mapping public transport accessibility in Brisbane',
     council: 'Brisbane City Council',
     center: [-27.4650, 153.0242],
-    zoom: 15,
+    zoom: 12,
     dataFile: 'brisbane_ptal_final.geojson.gz',
   },
   goldcoast: {
@@ -39,7 +39,12 @@ const REGIONS = {
     operator: 'Transperth',
     center: [-31.9512, 115.8599],
     zoom: 12,
-    dataFile: 'perth_ptal_final.geojson.gz',
+    fields: {
+      zone: "rcode_no",
+      flood: "flood_tier",
+      floodValues: ["FPA1", "FPA2", "FPA3"]
+    },
+     dataFile: 'perth_ptal_final.geojson.gz',
     colors: {
       primary: "#FFD100",
       header: "#000000"
