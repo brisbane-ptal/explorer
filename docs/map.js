@@ -744,8 +744,8 @@ function showInfo(e) {
         : "Unknown";
   setHTML("max-height", heightDisplay);
 
-  let bccParking = props.bcc_parking;
-  const ptalParking = props.ptal_parking;
+  const bccParking = Number(props.bcc_parking);
+  const ptalParking = Number(props.ptal_parking);
   
   const parkingZone = props.parking_zone;
   let zoneLabel = "General";
@@ -760,8 +760,8 @@ function showInfo(e) {
   
   setText("parking-zone", zoneLabel);
   
-  setText("current-parking", bccParking ? `${bccParking} spaces/2-bed` : "Unknown");
-  setText("recommended-parking", ptalParking ? `${ptalParking} spaces/2-bed` : "Unknown");
+  setText("current-parking", Number.isFinite(bccParking) ? `${bccParking} spaces/2-bed` : "Unknown");
+  setText("recommended-parking", Number.isFinite(ptalParking) ? `${ptalParking} spaces/2-bed` : "Unknown");
 
   
   const planningMismatch = hasPlanningMismatch(props);
