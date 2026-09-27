@@ -42,7 +42,8 @@ const REGIONS = {
     fields: {
       zone: "rcode_no",
       flood: "flood_tier",
-      floodValues: ["FPA1", "FPA2", "FPA3"]
+      floodValues: ["FPA1", "FPA2", "FPA3"],
+      currentParking: "perth_parking"
     },
      dataFile: 'perth_ptal_final.geojson.gz',
     colors: {
