@@ -514,6 +514,9 @@ function hasTransitGap(props) {
 }
 
 function isGreenSpace(props) {
+  if (typeof props.is_green_space === "boolean") {
+    return props.is_green_space;
+  }
   const z = String(props[CONFIG.fields && CONFIG.fields.zone || "Zone_code"] || "").trim().toUpperCase();
   return z === "CN" || z === "OS" || z === "SR" || z === "RU" || z === "RR" || z === "SP";
 }
@@ -732,7 +735,10 @@ function showInfo(e) {
     gridLink.title = "Shareable link to this cell";
 }
   
-  setText("zone-code", (props[CONFIG.fields && CONFIG.fields.zone || "Zone_code"] === "UNK" ? "Unknown" : props[CONFIG.fields && CONFIG.fields.zone || "Zone_code"]) || "Unknown");
+    const rcodeVal = props[CONFIG.fields && CONFIG.fields.zone || "Zone_code"];
+  const zoneVal = props.zone;
+  const zoneDisplay = (rcodeVal && rcodeVal !== "UNK") ? rcodeVal : (zoneVal || "Unknown");
+  setText("zone-code", zoneDisplay);
   setHTML("recommended-height", getRecommendedHeight(ptal, total_capacity));
   
   const maxStoreys = Number(props.max_storeys);
@@ -744,13 +750,18 @@ function showInfo(e) {
         : "Unknown";
   setHTML("max-height", heightDisplay);
 
-  const bccParking = Number(props.bcc_parking);
+  let bccParking = Number(props.bcc_parking);
   const ptalParking = Number(props.ptal_parking);
   
   const parkingZone = props.parking_zone;
+  const locationAB = props.location_ab;
   let zoneLabel = "General";
   
-  if (parkingZone === "334" || parkingZone === "334.0") {
+  if (locationAB === "A") {
+    zoneLabel = "Location A";
+  } else if (locationAB === "B") {
+    zoneLabel = "Location B";
+  } else if (parkingZone === "334" || parkingZone === "334.0") {
     zoneLabel = "City Core";
   } else if (parkingZone === "335" || parkingZone === "335.0") {
     zoneLabel = "City Frame";
@@ -760,8 +771,8 @@ function showInfo(e) {
   
   setText("parking-zone", zoneLabel);
   
-  setText("current-parking", Number.isFinite(bccParking) ? `${bccParking} spaces/2-bed` : "Unknown");
-  setText("recommended-parking", Number.isFinite(ptalParking) ? `${ptalParking} spaces/2-bed` : "Unknown");
+  setText("current-parking", Number.isFinite(bccParking) ? `${bccParking} spaces/2-bed (max)` : "Unknown");
+  setText("recommended-parking", Number.isFinite(ptalParking) ? `${ptalParking} spaces/2-bed (max)` : "Unknown");
 
   
   const planningMismatch = hasPlanningMismatch(props);
