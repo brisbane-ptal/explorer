@@ -71,9 +71,18 @@ const REGIONS = {
     name: 'Moreton Bay PETAL Explorer',
     tagline: 'Mapping public transport accessibility in Moreton Bay Region',
     council: 'Moreton Bay Regional Council',
-    center: [-27.3036, 152.9614],
-    zoom: 12,  
+    center: [-27.083067, 152.953626],
+    zoom: 12,
     dataFile: 'moreton_ptal_final.geojson.gz',
+    fields: {
+      zone: "zone_code",
+      flood: "flood_tier",
+      floodValues: ["FPA1", "FPA2", "FPA3"]
+    },
+    colors: {
+      primary: "#E4CC7A",
+      header: "#FC141D"
+    },
   },
   redland: {
     name: 'Redland PETAL Explorer',
@@ -103,6 +112,7 @@ function detectRegion() {
   if (cellId) {
     if (cellId.startsWith('GCCC_')) return 'goldcoast';
     if (cellId.startsWith('PTH_')) return 'perth';
+    if (cellId.startsWith('MB_')) return 'moreton';
     // Add other region prefixes here if needed
   }
   
