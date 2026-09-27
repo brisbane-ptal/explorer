@@ -501,10 +501,14 @@ function hasParkingMismatch(props) {
   const ptal = Number(props.ptal);
   const parkingZone = String(props.parking_zone);
   
-  if (ptal < 3) return false;
+  // Perth needs a lower gate here or its mismatches
+  // (99.98% of which sit at PTAL 2) are invisible on the map.
+  const threshold = lga === 'perth' ? 2 : 3;
+  if (ptal < threshold) return false;
   
   const isCityCore = parkingZone === "334" || parkingZone === "334.0";
-  
+  // Brisbane City Core has a lower rate so is excluded 
+   
   return props.parking_mismatch === true && !isCityCore;
 }
 
