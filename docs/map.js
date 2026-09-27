@@ -769,11 +769,11 @@ function showInfo(e) {
     zoneLabel = "General";
   }
   
-  setText("parking-zone", zoneLabel);
+    setText("parking-zone", zoneLabel);
   
-  setText("current-parking", Number.isFinite(bccParking) ? `${bccParking} spaces/2-bed (max)` : "Unknown");
-  setText("recommended-parking", Number.isFinite(ptalParking) ? `${ptalParking} spaces/2-bed (max)` : "Unknown");
-
+  const parkingSuffix = lga === 'perth' ? ' (min)' : '';
+  setText("current-parking", Number.isFinite(bccParking) ? `${bccParking} spaces/2-bed${parkingSuffix}` : "Unknown");
+  setText("recommended-parking", Number.isFinite(ptalParking) ? `${ptalParking} spaces/2-bed${parkingSuffix}` : "Unknown");
   
   const planningMismatch = hasPlanningMismatch(props);
   const transitGap = hasTransitGap(props);
